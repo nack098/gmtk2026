@@ -1,8 +1,8 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +10,7 @@ namespace TrashCount.Data.Generators
 {
     public static class EnumGenerator
     {
-        public static void GenerateFromDictionary<V>(string fileName, Dictionary<string, V> dict)
+        public static void GenerateFromDictionary(string enumName, string targetClassName, Dictionary<string, float> dict)
         {
             if (dict == null || dict.Count == 0) return;
 
@@ -20,11 +20,13 @@ namespace TrashCount.Data.Generators
             sb.AppendLine("// ========================================================");
             sb.AppendLine("namespace TrashCount.Data");
             sb.AppendLine("{");
-            sb.AppendLine($"    public enum {fileName}");
+
+            sb.AppendLine($"    public enum {enumName}");
             sb.AppendLine("    {");
             sb.AppendLine("        None = 0,");
 
-            HashSet<string> usedKeys = new();
+            HashSet<string> cleanKeys = new();
+            Dictionary<string, string> keyMap = new();
 
             foreach (var key in dict.Keys)
             {
@@ -36,22 +38,55 @@ namespace TrashCount.Data.Generators
                     cleanKey = "_" + cleanKey;
                 }
 
-                if (usedKeys.Add(cleanKey))
+                if (cleanKeys.Add(cleanKey))
                 {
+                    keyMap[key] = cleanKey;
                     sb.AppendLine($"        {cleanKey},");
                 }
             }
 
             sb.AppendLine("    }");
+            sb.AppendLine("");
+
+            sb.AppendLine($"    public partial class {targetClassName}");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        /// <summary>");
+            sb.AppendLine($"        /// Auto-generated zero-allocation indexer for {enumName}!");
+            sb.AppendLine($"        /// </summary>");
+            sb.AppendLine($"        public float this[{enumName} state] => state.GetDrainValue(this);");
+            sb.AppendLine("    }");
+            sb.AppendLine("");
+
+            // 3. GENERATE EXTENSION LOOKUP METHOD
+            sb.AppendLine($"    public static class {enumName}Extensions");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        public static float GetDrainValue(this {enumName} state, {targetClassName} data)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (data == null || data.DrainValue == null) return 0f;");
+            sb.AppendLine("");
+            sb.AppendLine("            switch (state)");
+            sb.AppendLine("            {");
+
+            foreach (var kvp in keyMap)
+            {
+                string origKey = kvp.Key;
+                string cleanKey = kvp.Value;
+
+                sb.AppendLine($"                case {enumName}.{cleanKey}:");
+                sb.AppendLine($"                    return data.DrainValue.TryGetValue(\"{origKey}\", out var v_{cleanKey}) ? v_{cleanKey} : 0f;");
+            }
+
+            sb.AppendLine("                default:");
+            sb.AppendLine("                    return 0f;");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
             sb.AppendLine("}");
 
             string dirPath = Path.Combine(Application.dataPath, "Scripts", "Generated");
-            if (!Directory.Exists(dirPath))
-            {
-                Directory.CreateDirectory(dirPath);
-            }
+            if (!Directory.Exists(dirPath)) Directory.CreateDirectory(dirPath);
 
-            string filePath = Path.Combine(dirPath, fileName + ".cs");
+            string filePath = Path.Combine(dirPath, $"{enumName}.cs");
             string newContent = sb.ToString();
 
             if (File.Exists(filePath) && File.ReadAllText(filePath) == newContent) return;
