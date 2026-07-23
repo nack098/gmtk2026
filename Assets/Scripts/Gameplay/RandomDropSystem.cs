@@ -32,7 +32,9 @@ namespace TrashCount.Gameplay
 
         private List<DropItemEntry> _dropCatalog = new();
         private uint _totalWeight;
-
+        
+        public event Action<ItemState, ItemModel> OnItemDropped;
+        
         public IReadOnlyList<DropItemEntry> DropCatalog => _dropCatalog;
         public uint TotalWeight => _totalWeight;
 
@@ -94,6 +96,7 @@ namespace TrashCount.Gameplay
                 {
                     dropState = _dropCatalog[i].State;
                     droppedItem = _dropCatalog[i].Item;
+                    OnItemDropped?.Invoke(dropState, droppedItem);
                     return true;
                 }
             }
@@ -101,6 +104,7 @@ namespace TrashCount.Gameplay
             var fallback = _dropCatalog[_dropCatalog.Count - 1];
             dropState = fallback.State;
             droppedItem = fallback.Item;
+            OnItemDropped?.Invoke(dropState, droppedItem);
             return true;
         }
     }

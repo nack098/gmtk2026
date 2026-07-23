@@ -43,6 +43,10 @@ namespace TrashCount.Gameplay
         private List<ShopItemEntry> _masterCatalog = new();
         private List<ShopItemEntry> _buyCatalog = new();
         private Dictionary<ItemState, ShopItemEntry> _catalogLookup = new();
+        
+        public event Action<ItemState, int> OnItemPurchased;        
+        public event Action<ItemState, int, long> OnItemSold;
+        public event Action OnTransactionFailed;
 
         public IReadOnlyList<ShopItemEntry> MasterCatalog => _masterCatalog;
         public IReadOnlyList<ShopItemEntry> BuyCatalog => _buyCatalog;
@@ -101,12 +105,14 @@ namespace TrashCount.Gameplay
         {
             if (!TryGetShopEntry(state, out var entry))
             {
+                OnTransactionFailed?.Invoke();
                 Debug.LogWarning($"[ShopSystem] Item '{state}' was not found in database!");
                 return false;
             }
 
             if (!entry.IsBuyable)
             {
+                OnTransactionFailed?.Invoke();
                 Debug.LogWarning($"[ShopSystem] Item '{state}' is not for sale!");
                 return false;
             }
@@ -116,6 +122,7 @@ namespace TrashCount.Gameplay
 
             if (currentMoney < price)
             {
+                OnTransactionFailed?.Invoke();
                 Debug.LogWarning("[ShopSystem] Insufficient Funds!");
                 return false;
             }
@@ -131,7 +138,9 @@ namespace TrashCount.Gameplay
             {
                 Debug.Log($"[ShopSystem] Purchased {state} for {price} gold. Remaining: {_gameData.Money}");
             }
-
+            
+            OnItemPurchased?.Invoke(state, entry.BuyPrice);
+            
             return true;
         }
 
@@ -139,12 +148,14 @@ namespace TrashCount.Gameplay
         {
             if (quantity <= 0)
             {
+                OnTransactionFailed?.Invoke();
                 Debug.LogWarning("[ShopSystem] Quantity must be greater than zero to sell!");
                 return false;
             }
 
             if (!TryGetShopEntry(state, out var entry))
             {
+                OnTransactionFailed?.Invoke();
                 Debug.LogWarning($"[ShopSystem] Item '{state}' was not found in database!");
                 return false;
             }
@@ -152,10 +163,10 @@ namespace TrashCount.Gameplay
             long sellRevenue = (long)entry.SellPrice * quantity;
             long resultantMoney = (long)_gameData.Money + sellRevenue;
 
-            // Clamps against uint overflow when dumping massive stacks
             _gameData.Money = (uint)Math.Clamp(resultantMoney, 0, uint.MaxValue);
-
+            
             Debug.Log($"[ShopSystem] Sold {quantity}x {state} for {sellRevenue} gold (Unit: {entry.SellPrice}). Money: {_gameData.Money}");
+            OnItemSold?.Invoke(state, quantity, sellRevenue);
             return true;
         }
     }

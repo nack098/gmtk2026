@@ -15,7 +15,8 @@ namespace TrashCount.Gameplay
         
         public HungerData Data => hungerData;
         public HungerState CurrentStateKey { get; private set; } = HungerState.None;
-
+        public event Action<HungerState, HungerState> OnHungerStateChanged;
+        
         private Dictionary<HungerState, HungerStateBase> _hungerStateMapping;
         private HungerStateBase _currentState;
 
@@ -51,11 +52,15 @@ namespace TrashCount.Gameplay
                 throw new ArgumentException($"[HungerSystem] Unregistered state: {nextState}");
             }
             
+            var previousState = CurrentStateKey;
+            
             _currentState?.Exit();
             
             CurrentStateKey = nextState;
             _currentState = nextHungerState;
             _currentState.Enter();
+            
+            OnHungerStateChanged?.Invoke(previousState, nextState);
         }
     }
 }
