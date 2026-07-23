@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections.Generic;
 using TrashCount.Data.Models;
 
 namespace TrashCount.Data
@@ -13,18 +12,6 @@ namespace TrashCount.Data
         public CharacterModel PlayerData = new();
         public CharacterModel FatherData = new();
         
-        public List<ItemModel> Inventory;
-        
-        public void AppendToInventory(ItemModel model)
-        {
-            if (IsFull)
-            {
-                Debug.Log("Inventory is full");
-                return;
-            }
-            Inventory.Add(model);
-        }
-        
-        public bool IsFull => Inventory.Count == MaxInventorySize;
+        public InventoryModel InventoryData = new();
     }
 }
