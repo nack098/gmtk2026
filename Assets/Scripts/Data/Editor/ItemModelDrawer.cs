@@ -8,76 +8,74 @@ using TrashCount.Data.Models;
 
 namespace TrashCount.Data.Editor
 {
-    [CustomPropertyDrawer(typeof(ItemModel))]
-    public class ItemModelDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(IItemCapability), useForChildren: true)]
+    public class ItemCapabilityDrawer : PropertyDrawer
     {
-        private const string NoneLabel = "None (Null)";
+        private const string NoneLabel = "<Select Capability Type>";
         private const float Spacing = 2f;
 
         private static Dictionary<string, Type> _types;
-        private static string[] _names;
+        private static string[] _typeNames;
+
+        [InitializeOnLoadMethod]
+        private static void ClearTypeCache()
+        {
+            _types = null;
+            _typeNames = null;
+        }
 
         private static void InitializeTypes()
         {
             if (_types != null) return;
 
-            var allTypes = TypeCache.GetTypesDerivedFrom<ItemBaseModel>().ToList();
-            if (!typeof(ItemBaseModel).IsAbstract && !typeof(ItemBaseModel).IsInterface)
+            var allTypes = TypeCache.GetTypesDerivedFrom<IItemCapability>()
+                .Where(t => !t.IsAbstract && !t.IsInterface)
+                .OrderBy(t => t.Name);
+
+            _types = new Dictionary<string, Type>();
+            foreach (var type in allTypes)
             {
-                allTypes.Add(typeof(ItemBaseModel));
+                string displayName = type.Name.Replace("Capability", "");
+                _types[displayName] = type;
             }
 
-            _types = allTypes
-                .Where(t => !t.IsAbstract && !t.IsInterface)
-                .OrderBy(t => t.FullName)
-                // Use FullName with slashes to prevent name collisions and enable submenus
-                .ToDictionary(t => t.FullName, t => t);
-
-            _names = new[] { NoneLabel }.Concat(_types.Keys).ToArray();
+            _typeNames = new[] { NoneLabel }.Concat(_types.Keys).ToArray();
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             InitializeTypes();
             EditorGUI.BeginProperty(position, label, property);
+
+            Rect dropdownRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+
+            Type currentType = property.managedReferenceValue?.GetType();
+            string currentDisplayName = currentType != null ? currentType.Name.Replace("Capability", "") : NoneLabel;
             
-            SerializedProperty valueProp = property.FindPropertyRelative("Value");
-            if (valueProp == null)
+            int currentIndex = Math.Max(0, Array.IndexOf(_typeNames, currentDisplayName));
+
+            EditorGUI.BeginChangeCheck();
+            int newIndex = EditorGUI.Popup(dropdownRect, label.text, currentIndex, _typeNames);
+
+            if (EditorGUI.EndChangeCheck())
             {
-                EditorGUI.LabelField(position, label.text, "Field 'Value' not found. Check case sensitivity.");
+                Undo.RecordObject(property.serializedObject.targetObject, "Change Item Capability Type");
+
+                property.managedReferenceValue = newIndex == 0
+                    ? null
+                    : Activator.CreateInstance(_types[_typeNames[newIndex]]);
+
                 EditorGUI.EndProperty();
                 return;
             }
 
-            Rect dropdownRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-            string currentName = valueProp.managedReferenceValue?.GetType().FullName;
-            int currentIndex = Math.Max(0, Array.IndexOf(_names, currentName));
-
-            EditorGUI.BeginChangeCheck();
-            int newIndex = EditorGUI.Popup(dropdownRect, label.text, currentIndex, _names);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                Undo.RecordObject(property.serializedObject.targetObject, "Change Item Model Type");
-
-                valueProp.managedReferenceValue = newIndex == 0
-                    ? null
-                    : Activator.CreateInstance(_types[_names[newIndex]]);
-                
-                valueProp.serializedObject.ApplyModifiedProperties();
-                EditorUtility.SetDirty(property.serializedObject.targetObject);
-
-                EditorGUI.EndProperty();
-                return; 
-            }
-
-            if (valueProp.managedReferenceValue != null)
+            if (property.managedReferenceValue != null)
             {
                 float y = position.y + EditorGUIUtility.singleLineHeight + Spacing;
                 EditorGUI.indentLevel++;
 
-                SerializedProperty copy = valueProp.Copy();
-                SerializedProperty end = valueProp.GetEndProperty();
+                SerializedProperty copy = property.Copy();
+                SerializedProperty end = property.GetEndProperty();
                 bool enterChildren = true;
 
                 while (copy.NextVisible(enterChildren) && !SerializedProperty.EqualContents(copy, end))
@@ -96,14 +94,13 @@ namespace TrashCount.Data.Editor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            SerializedProperty valueProp = property.FindPropertyRelative("Value");
             float total = EditorGUIUtility.singleLineHeight;
 
-            if (valueProp != null && valueProp.managedReferenceValue != null)
+            if (property.managedReferenceValue != null)
             {
                 total += Spacing;
-                SerializedProperty copy = valueProp.Copy();
-                SerializedProperty end = valueProp.GetEndProperty();
+                SerializedProperty copy = property.Copy();
+                SerializedProperty end = property.GetEndProperty();
                 bool enterChildren = true;
 
                 while (copy.NextVisible(enterChildren) && !SerializedProperty.EqualContents(copy, end))

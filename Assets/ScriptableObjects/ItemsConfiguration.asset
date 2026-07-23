@@ -13,30 +13,14 @@ MonoBehaviour:
   m_Name: ItemsConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.ItemData
   Items:
-  - key: Test
+  - key: Apple
     value:
-      Value:
-        rid: 2474897833000435991
-  - key: Test2
+      sellPrice: 20
+      capabilities: []
+  - key: Orange
     value:
-      Value:
-        rid: 2474897833000435994
-  - key: Test3
-    value:
-      Value:
-        rid: 2474897833000435995
+      sellPrice: 10
+      capabilities: []
   references:
     version: 2
-    RefIds:
-    - rid: 2474897833000435991
-      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
-      data:
-        Restore: 10
-    - rid: 2474897833000435994
-      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
-      data:
-        Restore: 24
-    - rid: 2474897833000435995
-      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
-      data:
-        Restore: 0
+    RefIds: []

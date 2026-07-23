@@ -1,25 +1,48 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
 namespace TrashCount.Data.Models
 {
-    [System.Serializable]
+    [Serializable]
     public class ItemModel
     {
-        [UnityEngine.SerializeReference] public ItemBaseModel Value;
+        public int sellPrice;
         
-        public ItemModel(ItemBaseModel @value)
+        [SerializeReference] 
+        public List<IItemCapability> capabilities = new();
+
+        public bool TryGetCapability<T>(out T capability) where T : class, IItemCapability
         {
-            Value = @value;
+            for (int i = 0; i < capabilities.Count; i++)
+            {
+                if (capabilities[i] is T match)
+                {
+                    capability = match;
+                    return true;
+                }
+            }
+            capability = null;
+            return false;
+        }
+
+        public bool HasCapability<T>() where T : class, IItemCapability
+        {
+            return TryGetCapability<T>(out _);
         }
     }
-    
-    [System.Serializable]
-    public abstract class ItemBaseModel
+
+    public interface IItemCapability { }
+
+    [Serializable]
+    public class BuyableCapability : IItemCapability
     {
-        
+        public int buyPrice;
     }
-    
-    [System.Serializable]
-    public class Eatable: ItemBaseModel
+
+    [Serializable]
+    public class EatableCapability : IItemCapability
     {
-        public int Restore;
+        public int restoreAmount;
     }
 }
