@@ -39,10 +39,6 @@ namespace TrashCount.Gameplay
             }
         }
 
-        void Start()
-        {
-        }
-
         void Update()
         {
             _currentState?.Tick(Time.deltaTime);
