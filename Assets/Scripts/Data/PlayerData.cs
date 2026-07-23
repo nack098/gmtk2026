@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using TrashCount.Data.Models;
 
 namespace TrashCount.Data
 {
@@ -6,5 +8,6 @@ namespace TrashCount.Data
     public class PlayerData : ScriptableObject
     {
         public float Speed;
+        public List<ItemModel> PickUp;
     }
 }
