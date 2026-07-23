@@ -10,9 +10,19 @@ namespace TrashCount.Data.Generators
 {
     public static class EnumGenerator
     {
-        public static void GenerateFromDictionary(string enumName, string targetClassName, Dictionary<string, float> dict)
+        /// <summary>
+        /// Generates a strongly-typed Enum, Partial Class Indexer, and Lookup Extension for ANY dictionary type!
+        /// </summary>
+        /// <typeparam name="TValue">The model or value type stored in the dictionary (e.g. float, ItemBaseModel, etc.)</typeparam>
+        /// <param name="enumName">Name of the Enum to generate (e.g., "ItemState")</param>
+        /// <param name="targetClassName">Name of the target partial ScriptableObject class (e.g., "ItemData")</param>
+        /// <param name="memberName">The exact property/field name on target class holding the dictionary (e.g., "Items")</param>
+        /// <param name="dict">The dictionary containing string keys</param>
+        public static void GenerateFromDictionary<TValue>(string enumName, string targetClassName, string memberName, Dictionary<string, TValue> dict)
         {
             if (dict == null || dict.Count == 0) return;
+
+            string valueTypeName = typeof(TValue).FullName ?? typeof(TValue).Name;
 
             StringBuilder sb = new();
             sb.AppendLine("// ========================================================");
@@ -21,6 +31,7 @@ namespace TrashCount.Data.Generators
             sb.AppendLine("namespace TrashCount.Data");
             sb.AppendLine("{");
 
+            // 1. GENERATE ENUM
             sb.AppendLine($"    public enum {enumName}");
             sb.AppendLine("    {");
             sb.AppendLine("        None = 0,");
@@ -48,21 +59,22 @@ namespace TrashCount.Data.Generators
             sb.AppendLine("    }");
             sb.AppendLine("");
 
+            // 2. GENERATE PARTIAL CLASS INDEXER
             sb.AppendLine($"    public partial class {targetClassName}");
             sb.AppendLine("    {");
             sb.AppendLine($"        /// <summary>");
             sb.AppendLine($"        /// Auto-generated zero-allocation indexer for {enumName}!");
             sb.AppendLine($"        /// </summary>");
-            sb.AppendLine($"        public float this[{enumName} state] => state.GetDrainValue(this);");
+            sb.AppendLine($"        public {valueTypeName} this[{enumName} state] => state.GetValue(this);");
             sb.AppendLine("    }");
             sb.AppendLine("");
 
             // 3. GENERATE EXTENSION LOOKUP METHOD
             sb.AppendLine($"    public static class {enumName}Extensions");
             sb.AppendLine("    {");
-            sb.AppendLine($"        public static float GetDrainValue(this {enumName} state, {targetClassName} data)");
+            sb.AppendLine($"        public static {valueTypeName} GetValue(this {enumName} state, {targetClassName} data)");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (data == null || data.DrainValue == null) return 0f;");
+            sb.AppendLine($"            if (data == null || data.{memberName} == null) return default;");
             sb.AppendLine("");
             sb.AppendLine("            switch (state)");
             sb.AppendLine("            {");
@@ -73,16 +85,17 @@ namespace TrashCount.Data.Generators
                 string cleanKey = kvp.Value;
 
                 sb.AppendLine($"                case {enumName}.{cleanKey}:");
-                sb.AppendLine($"                    return data.DrainValue.TryGetValue(\"{origKey}\", out var v_{cleanKey}) ? v_{cleanKey} : 0f;");
+                sb.AppendLine($"                    return data.{memberName}.TryGetValue(\"{origKey}\", out var v_{cleanKey}) ? v_{cleanKey} : default;");
             }
 
             sb.AppendLine("                default:");
-            sb.AppendLine("                    return 0f;");
+            sb.AppendLine("                    return default;");
             sb.AppendLine("            }");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
+            // Write File
             string dirPath = Path.Combine(Application.dataPath, "Scripts", "Generated");
             if (!Directory.Exists(dirPath)) Directory.CreateDirectory(dirPath);
 
