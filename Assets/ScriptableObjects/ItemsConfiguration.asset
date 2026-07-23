@@ -35,7 +35,7 @@ MonoBehaviour:
     - rid: 2474897833000435994
       type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        Restore: 0
+        Restore: 24
     - rid: 2474897833000435995
       type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:

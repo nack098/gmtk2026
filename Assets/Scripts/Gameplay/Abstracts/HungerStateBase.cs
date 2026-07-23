@@ -1,5 +1,6 @@
 using UnityEngine;
 using TrashCount.Gameplay;
+using TrashCount.Data.Models;
 
 namespace TrashCount.Gameplay.Abstracts
 {
