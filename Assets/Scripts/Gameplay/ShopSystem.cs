@@ -54,7 +54,7 @@ namespace TrashCount.Gameplay
                 {
                     Enum.TryParse<ItemState>(kvp.Key, true, out var state);
                     kvp.Value.TryGetCapability<BuyableCapability>(out var buyable);
-                    return new ShopItemEntry(state, kvp.Value, buyable.buyPrice);
+                    return new ShopItemEntry(state, kvp.Value, buyable.BuyPrice);
                 })
                 .ToList();
 
