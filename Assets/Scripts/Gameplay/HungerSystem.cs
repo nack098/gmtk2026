@@ -50,6 +50,8 @@ namespace TrashCount.Gameplay
         
         public void ChangeState(HungerState nextState)
         {
+            if (CurrentStateKey == nextState && _currentState != null) return;
+
             if (!_hungerStateMapping.TryGetValue(nextState, out var nextHungerState))
             {
                 throw new ArgumentException($"[HungerSystem] Unregistered state: {nextState}");
