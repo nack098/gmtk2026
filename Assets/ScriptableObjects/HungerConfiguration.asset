@@ -12,6 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecef76ecc48968c49898df018f50c224, type: 3}
   m_Name: HungerConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.HungerData
-  DrainValue:
-  - key: Test
-    value: 0.5
+  DrainValue: []
