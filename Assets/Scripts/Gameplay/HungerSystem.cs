@@ -8,21 +8,20 @@ using TrashCount.Gameplay.Abstracts;
 using TrashCount.Gameplay.Attributes;
 
 namespace TrashCount.Gameplay
-{    
+{
     public class HungerSystem : MonoBehaviour
     {
         [SerializeField] private HungerData hungerData;
-        
+
         public HungerData Data => hungerData;
         public HungerState CurrentStateKey { get; private set; } = HungerState.None;
         public event Action<HungerState, HungerState> OnHungerStateChanged;
-        
-        private Dictionary<HungerState, HungerStateBase> _hungerStateMapping;
+
+        private Dictionary<HungerState, HungerStateBase> _hungerStateMapping = new();
         private HungerStateBase _currentState;
 
         void Awake()
         {
-            _hungerStateMapping = new Dictionary<HungerState, HungerStateBase>();
             var assembly = typeof(HungerSystem).Assembly;
             var stateTypes = assembly.GetTypes()
                 .Where(t => !t.IsAbstract && typeof(HungerStateBase).IsAssignableFrom(t));
@@ -44,22 +43,22 @@ namespace TrashCount.Gameplay
         {
             _currentState?.Tick(Time.deltaTime);
         }
-        
+
         public void ChangeState(HungerState nextState)
         {
             if (!_hungerStateMapping.TryGetValue(nextState, out var nextHungerState))
             {
                 throw new ArgumentException($"[HungerSystem] Unregistered state: {nextState}");
             }
-            
+
             var previousState = CurrentStateKey;
-            
+
             _currentState?.Exit();
-            
+
             CurrentStateKey = nextState;
             _currentState = nextHungerState;
             _currentState.Enter();
-            
+
             OnHungerStateChanged?.Invoke(previousState, nextState);
         }
     }
