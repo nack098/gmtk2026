@@ -7,7 +7,7 @@ namespace TrashCount.Data.Models
     [Serializable]
     public class ItemModel
     {
-        public int sellPrice;
+        public int SellPrice;
         
         [SerializeReference] 
         public List<IItemCapability> capabilities = new();
@@ -37,12 +37,12 @@ namespace TrashCount.Data.Models
     [Serializable]
     public class BuyableCapability : IItemCapability
     {
-        public int buyPrice;
+        public int BuyPrice;
     }
 
     [Serializable]
     public class EatableCapability : IItemCapability
     {
-        public int restoreAmount;
+        public int RestoreAmount;
     }
 }

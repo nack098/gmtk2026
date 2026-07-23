@@ -24,6 +24,7 @@ namespace TrashCount.Gameplay
     public class ShopSystem : MonoBehaviour
     {
         [SerializeField] private ItemData _items;
+        [SerializeField] private GameData _gameData;
         
         private List<ShopItemEntry> _shopCatalog = new();
         private Dictionary<ItemState, ShopItemEntry> _shopCatalogLookup = new();
@@ -35,6 +36,12 @@ namespace TrashCount.Gameplay
             if (_items == null)
             {
                 Debug.LogWarning("[ShopSystem] ItemData reference is missing!", this);
+                return;
+            }
+            
+            if (_gameData == null)
+            {
+                Debug.LogWarning("[ShopSystem] GameData reference is missing!", this);
                 return;
             }
 
@@ -69,7 +76,27 @@ namespace TrashCount.Gameplay
                 return false;
             }
 
-            ItemModel itemToBuy = _items[state]; 
+            long currentMoney = _gameData.Money;
+            long price = shopEntry.BuyPrice;
+
+            if (currentMoney < price)
+            {
+                Debug.LogWarning("[ShopSystem] Insufficient Funds!");
+                return false;
+            }
+
+            long resultantMoney = currentMoney - price;
+            _gameData.Money = (uint)Math.Max(0, resultantMoney);
+
+            if (price < 0)
+            {
+                Debug.Log($"[ShopSystem] You were PAID {-price} gold to haul away {state}!");
+            }
+            else
+            {
+                Debug.Log($"[ShopSystem] Purchased {state} for {price} gold.");
+            }
+            
             return true;
         }
     }
