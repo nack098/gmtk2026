@@ -6,5 +6,30 @@ namespace TrashCount.Data
     public enum HungerState
     {
         None = 0,
+        Test,
+    }
+
+    public partial class HungerData
+    {
+        /// <summary>
+        /// Auto-generated zero-allocation indexer for HungerState!
+        /// </summary>
+        public float this[HungerState state] => state.GetDrainValue(this);
+    }
+
+    public static class HungerStateExtensions
+    {
+        public static float GetDrainValue(this HungerState state, HungerData data)
+        {
+            if (data == null || data.DrainValue == null) return 0f;
+
+            switch (state)
+            {
+                case HungerState.Test:
+                    return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : 0f;
+                default:
+                    return 0f;
+            }
+        }
     }
 }
