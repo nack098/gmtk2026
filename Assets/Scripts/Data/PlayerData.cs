@@ -8,6 +8,6 @@ namespace TrashCount.Data
     public class PlayerData : ScriptableObject
     {
         public float Speed;
-        public List<ItemModel> PickUp;
+        public List<ItemModel> PickUp = new();
     }
 }
