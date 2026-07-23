@@ -26,9 +26,9 @@ public class Playstat : MonoBehaviour
     public float CurrentHungry => currentHungry;
     public float CurrentStamina => currentStamina;
 
-    public float MaxHealthy => playerData != null && playerData.Healthy > 0 ? playerData.Healthy : 100f;
-    public float MaxHungry => playerData != null && playerData.Hungry > 0 ? playerData.Hungry : 100f;
-    public float MaxStamina => playerData != null && playerData.Stamina > 0 ? playerData.Stamina : 100f;
+    public float MaxHealthy => playerData.Healthy;
+    public float MaxHungry => playerData.Hungry;
+    public float MaxStamina => playerData.Stamina;
 
     private float _baseMoveSpeed = 2.0f;
     private float _baseSprintSpeed = 5.335f;
@@ -45,7 +45,7 @@ public class Playstat : MonoBehaviour
             _baseMoveSpeed = controller.MoveSpeed;
             _baseSprintSpeed = controller.SprintSpeed;
         }
-        else if (playerData != null && playerData.Speed > 0)
+        else
         {
             _baseMoveSpeed = playerData.Speed;
             _baseSprintSpeed = playerData.Speed * 2.0f;
@@ -57,17 +57,7 @@ public class Playstat : MonoBehaviour
         currentStamina = MaxStamina;
 
         // Initialize HungerSystem state
-        if (hungerSystem != null)
-        {
-            try
-            {
-                hungerSystem.ChangeState(HungerState.Normal);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[Playstat] Initial state set warning: {ex.Message}");
-            }
-        }
+        hungerSystem.ChangeState(HungerState.Normal);
     }
 
     private void Update()
@@ -95,16 +85,12 @@ public class Playstat : MonoBehaviour
 
         if (isRegeneratingStamina)
         {
-            float hungerMultiplier = 1.0f;
-            if (hungerSystem != null && hungerSystem.Data != null)
-            {
-                hungerMultiplier = hungerSystem.Data[hungerSystem.CurrentStateKey];
-            }
+            float hungerMultiplier = hungerSystem.Data[hungerSystem.CurrentStateKey];
 
             // While walking (moving without sprinting), apply walkingStaminaRegenMultiplier (e.g. 50% rate)
             float moveStateMultiplier = isMoving ? walkingStaminaRegenMultiplier : 1.0f;
 
-            float baseRegenRate = playerData != null && playerData.StaminaRegen > 0 ? playerData.StaminaRegen : 10f;
+            float baseRegenRate = playerData.StaminaRegen;
             float staminaAdded = baseRegenRate * hungerMultiplier * moveStateMultiplier * Time.deltaTime;
 
             // Cap to remaining stamina space
@@ -167,10 +153,10 @@ public class Playstat : MonoBehaviour
                     stateSpeedMultiplier = 1.0f;
                     break;
                 case HungerState.Hungry:
-                    stateSpeedMultiplier = 0.75f;
+                    stateSpeedMultiplier = 1f;
                     break;
                 case HungerState.Starving:
-                    stateSpeedMultiplier = 0.5f;
+                    stateSpeedMultiplier = 1f;
                     break;
                 case HungerState.Test:
                     stateSpeedMultiplier = 0.5f;

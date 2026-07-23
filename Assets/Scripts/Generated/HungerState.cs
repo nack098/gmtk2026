@@ -6,10 +6,10 @@ namespace TrashCount.Data
     public enum HungerState
     {
         None = 0,
-        Test,
         Normal,
         Hungry,
         Starving,
+        Test,
     }
 
     public partial class HungerData
@@ -17,27 +17,27 @@ namespace TrashCount.Data
         /// <summary>
         /// Auto-generated zero-allocation indexer for HungerState!
         /// </summary>
-        public float this[HungerState state] => state.GetDrainValue(this);
+        public System.Single this[HungerState state] => state.GetValue(this);
     }
 
     public static class HungerStateExtensions
     {
-        public static float GetDrainValue(this HungerState state, HungerData data)
+        public static System.Single GetValue(this HungerState state, HungerData data)
         {
-            if (data == null || data.DrainValue == null) return 0f;
+            if (data == null || data.DrainValue == null) return default;
 
             switch (state)
             {
-                case HungerState.Test:
-                    return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : 0f;
                 case HungerState.Normal:
-                    return data.DrainValue.TryGetValue("Normal", out var v_Normal) ? v_Normal : 0f;
+                    return data.DrainValue.TryGetValue("Normal", out var v_Normal) ? v_Normal : default;
                 case HungerState.Hungry:
-                    return data.DrainValue.TryGetValue("Hungry", out var v_Hungry) ? v_Hungry : 0f;
+                    return data.DrainValue.TryGetValue("Hungry", out var v_Hungry) ? v_Hungry : default;
                 case HungerState.Starving:
-                    return data.DrainValue.TryGetValue("Starving", out var v_Starving) ? v_Starving : 0f;
+                    return data.DrainValue.TryGetValue("Starving", out var v_Starving) ? v_Starving : default;
+                case HungerState.Test:
+                    return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : default;
                 default:
-                    return 0f;
+                    return default;
             }
         }
     }

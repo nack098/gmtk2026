@@ -10,11 +10,12 @@ namespace TrashCount.Gameplay.HungerSystemState
     {
         public override void Enter()
         {
-            Debug.Log("[HungerSystem] Entered Normal State.");
+            Debug.Log("[HungerSystem] Entered NormalState.");
         }
 
         public override void Tick(float deltaTime)
         {
+            
         }
 
         public override void Exit()

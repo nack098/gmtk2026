@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08e19991005c71540a177d44fb845570, type: 3}
   m_Name: PlayerConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.PlayerData
-  Speed: 10
+  Speed: 1
   Healthy: 1
   Hungry: 1
   Stamina: 1
   StaminaRegen: 1
-  HungryMultiple: 10
+  HungryMultiple: 1
