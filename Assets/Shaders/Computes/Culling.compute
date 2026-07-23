@@ -1,0 +1,46 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ResetIndex
+#pragma kernel Culling
+
+struct GrassData
+{
+    float id;
+    float value;
+    float2 pad0;
+    float3 position;
+    float pad1;
+};
+
+StructuredBuffer<GrassData> _AllInstancesBuffer;
+RWStructuredBuffer<GrassData> _CulledInstancesBuffer;
+RWStructuredBuffer<uint> _ArgumentsBuffer;
+
+float4 _FrustumPlanes[6];
+uint _TotalInstances;
+float _BoundingRadius;
+
+[numthreads(64,1,1)]
+void Culling(uint3 id: SV_DispatchThreadID)
+{
+    if (id.x >= _TotalInstances) return;
+    
+    GrassData instance = _AllInstancesBuffer[id.x];
+    
+    for (int i = 0; i < 6; ++i)
+    {
+        float4 currentPlane = _FrustumPlanes[i];
+        float distance = dot(currentPlane.xyz, instance.position) + currentPlane.w;
+        if (distance < -_BoundingRadius)
+            return;
+    }
+    
+    uint destinationIndex;
+    InterlockedAdd(_ArgumentsBuffer[1], 1, destinationIndex);
+    _CulledInstancesBuffer[destinationIndex] = instance;
+}
+
+[numthreads(1,1,1)]
+void ResetIndex(uint3 id: SV_DispatchThreadID)
+{
+    _ArgumentsBuffer[1] = 0;
+}
