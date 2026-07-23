@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9637a392fe4406b43bdcab0970ea5620, type: 3}
+  m_Name: ItemsConfiguration
+  m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.ItemData
+  Items:
+  - key: Test
+    value:
+      Value:
+        rid: 2474897833000435991
+  - key: Test2
+    value:
+      Value:
+        rid: 2474897833000435994
+  - key: Test3
+    value:
+      Value:
+        rid: 2474897833000435995
+  references:
+    version: 2
+    RefIds:
+    - rid: 2474897833000435991
+      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        Restore: 10
+    - rid: 2474897833000435994
+      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        Restore: 0
+    - rid: 2474897833000435995
+      type: {class: Eatable, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        Restore: 0

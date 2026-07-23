@@ -12,5 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08e19991005c71540a177d44fb845570, type: 3}
   m_Name: PlayerConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.PlayerData
-  Speed: 0
-  DrainRate: 0
+  Speed: 1

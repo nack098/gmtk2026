@@ -7,6 +7,7 @@ namespace TrashCount.Data
     {
         None = 0,
         Test,
+        Test2,
     }
 
     public partial class HungerData
@@ -14,21 +15,23 @@ namespace TrashCount.Data
         /// <summary>
         /// Auto-generated zero-allocation indexer for HungerState!
         /// </summary>
-        public float this[HungerState state] => state.GetDrainValue(this);
+        public System.Single this[HungerState state] => state.GetValue(this);
     }
 
     public static class HungerStateExtensions
     {
-        public static float GetDrainValue(this HungerState state, HungerData data)
+        public static System.Single GetValue(this HungerState state, HungerData data)
         {
-            if (data == null || data.DrainValue == null) return 0f;
+            if (data == null || data.DrainValue == null) return default;
 
             switch (state)
             {
                 case HungerState.Test:
-                    return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : 0f;
+                    return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : default;
+                case HungerState.Test2:
+                    return data.DrainValue.TryGetValue("Test2", out var v_Test2) ? v_Test2 : default;
                 default:
-                    return 0f;
+                    return default;
             }
         }
     }
