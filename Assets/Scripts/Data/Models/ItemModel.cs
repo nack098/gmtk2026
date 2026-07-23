@@ -45,4 +45,10 @@ namespace TrashCount.Data.Models
     {
         public int RestoreAmount;
     }
+    
+    [Serializable]
+    public class DropableCapability : IItemCapability
+    {
+        public uint DropChance;
+    }
 }
