@@ -1127,7 +1127,6 @@ MonoBehaviour:
   SpeedChangeRate: 10
   AudioFootsteps: {fileID: 0}
   LandingAudio: {fileID: 0}
-  AudioFoley: {fileID: 0}
   LandingAudioClip: {fileID: 8300000, guid: ff697d3070687ce4583faa0561a145a2, type: 3}
   FootstepAudioClips:
   - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
@@ -2404,7 +2403,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8338988566280778634}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.25728074, y: 0.10515665, z: 0.02817664, w: -0.96018475}
+  m_LocalRotation: {x: 0.15251584, y: 0.64189976, z: 0.13234694, w: -0.7397215}
   m_LocalPosition: {x: 0, y: 1.375, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

@@ -32,7 +32,7 @@ public class MenuManager : MonoBehaviour
     }
     public void GameStart()
     {
-        SceneManager.LoadScene("SampleScene");
+        SceneManager.LoadScene("ZenGameScene");
     }
     
     public void GameQuit()

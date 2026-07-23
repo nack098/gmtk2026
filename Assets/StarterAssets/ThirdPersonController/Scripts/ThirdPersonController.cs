@@ -30,7 +30,6 @@ namespace StarterAssets
 
         public AudioSource AudioFootsteps;
         public AudioSource LandingAudio;
-        public AudioSource AudioFoley;
         public AudioClip LandingAudioClip;
         public AudioClip[] FootstepAudioClips;
         [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
@@ -379,8 +378,6 @@ namespace StarterAssets
 
                 if (AudioFootsteps != null)
                     AudioFootsteps.Play();
-                if (AudioFoley != null)
-                    AudioFoley.Play();
             }
         }
 
