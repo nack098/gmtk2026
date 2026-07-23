@@ -7,6 +7,9 @@ namespace TrashCount.Data
     {
         None = 0,
         Test,
+        Normal,
+        Hungry,
+        Starving,
     }
 
     public partial class HungerData
@@ -27,6 +30,12 @@ namespace TrashCount.Data
             {
                 case HungerState.Test:
                     return data.DrainValue.TryGetValue("Test", out var v_Test) ? v_Test : 0f;
+                case HungerState.Normal:
+                    return data.DrainValue.TryGetValue("Normal", out var v_Normal) ? v_Normal : 0f;
+                case HungerState.Hungry:
+                    return data.DrainValue.TryGetValue("Hungry", out var v_Hungry) ? v_Hungry : 0f;
+                case HungerState.Starving:
+                    return data.DrainValue.TryGetValue("Starving", out var v_Starving) ? v_Starving : 0f;
                 default:
                     return 0f;
             }

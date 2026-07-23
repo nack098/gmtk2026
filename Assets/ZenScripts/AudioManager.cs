@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Audio;
+using TMPro;
 
 public class AudioManager : MonoBehaviour
 {
