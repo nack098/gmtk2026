@@ -776,7 +776,7 @@ MonoBehaviour:
   - {fileID: 242888461646047245, guid: a6135560cbb78434d9174db1b7db995a, type: 3}
   _scrapDensityGrid: 70
   _basePoissonLambda: 8
-  _positionJitter: 2
+  _positionJitter: 3
   _scaleRange: {x: 0.5, y: 2}
   _terrainScrapContainer: {fileID: 329489515}
 --- !u!1 &1775427044
