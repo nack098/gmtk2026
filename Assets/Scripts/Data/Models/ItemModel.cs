@@ -51,4 +51,10 @@ namespace TrashCount.Data.Models
     {
         public uint DropChance;
     }
+    [Serializable]
+    public class PickableCapability : IItemCapability
+    {
+        public GameObject WorldPrefab;
+    }
+    
 }

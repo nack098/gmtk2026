@@ -30,26 +30,20 @@ public class Playstat : MonoBehaviour
     public float MaxHungry => playerData.Hungry;
     public float MaxStamina => playerData.Stamina;
 
+    public float RummageStaminaCost => playerData.RummageStaminaCost;
+
+    public bool IsCarryingItem { get; set; }
+    public bool IsPushingCart { get; set; }
+    public float CartWeight { get; set; }
+
     private float _baseMoveSpeed = 2.0f;
     private float _baseSprintSpeed = 5.335f;
 
     private void Start()
     {
-        if (controller == null) controller = GetComponent<ThirdPersonController>();
-        if (hungerSystem == null) hungerSystem = GetComponent<HungerSystem>();
-        if (inputs == null) inputs = GetComponent<StarterAssetsInputs>();
-
-        // Store base speeds from controller if available, otherwise use playerData
-        if (controller != null)
-        {
-            _baseMoveSpeed = controller.MoveSpeed;
-            _baseSprintSpeed = controller.SprintSpeed;
-        }
-        else
-        {
-            _baseMoveSpeed = playerData.Speed;
-            _baseSprintSpeed = playerData.Speed * 2.0f;
-        }
+        controller = GetComponent<ThirdPersonController>();
+        hungerSystem = GetComponent<HungerSystem>();
+        GetComponent<StarterAssetsInputs>();
 
         // Initialize runtime stats
         currentHealthy = MaxHealthy;
@@ -65,8 +59,24 @@ public class Playstat : MonoBehaviour
         bool isSprinting = inputs != null && inputs.sprint;
         bool isMoving = inputs != null && inputs.move.sqrMagnitude > 0.01f;
 
-        // 1. Handle Sprinting & Stamina Consumption
-        if (isSprinting && currentStamina > 0f)
+        // 1. Handle Cart Pushing Stamina Drain
+        if (IsPushingCart)
+        {
+            float cartDrainRate = playerData.CartBaseStaminaDrainRate + (CartWeight * playerData.CartWeightStaminaMultiplier);
+            if (isSprinting) cartDrainRate *= 2.0f; // Double drain when sprinting with cart
+
+            currentStamina = Mathf.Max(0f, currentStamina - cartDrainRate * Time.deltaTime);
+        }
+        // 2. Handle Carrying Item Stamina Drain
+        else if (IsCarryingItem)
+        {
+            float carryDrainRate = playerData.CarryStaminaDrainRate;
+            if (isSprinting) carryDrainRate *= 2.0f; // Double drain when sprinting with item
+
+            currentStamina = Mathf.Max(0f, currentStamina - carryDrainRate * Time.deltaTime);
+        }
+        // 3. Handle Sprinting & Stamina Consumption
+        else if (isSprinting && currentStamina > 0f)
         {
             currentStamina = Mathf.Max(0f, currentStamina - staminaDrainRate * Time.deltaTime);
 
@@ -80,8 +90,8 @@ public class Playstat : MonoBehaviour
             if (inputs != null) inputs.sprint = false; // Block sprinting when out of stamina
         }
 
-        // 2. Handle Stamina Regeneration when not sprinting
-        bool isRegeneratingStamina = (!isSprinting || currentStamina <= 0f) && currentStamina < MaxStamina;
+        // 4. Handle Stamina Regeneration when not sprinting, NOT carrying item, and NOT pushing cart
+        bool isRegeneratingStamina = !IsCarryingItem && !IsPushingCart && (!isSprinting || currentStamina <= 0f) && currentStamina < MaxStamina;
 
         if (isRegeneratingStamina)
         {
@@ -100,23 +110,26 @@ public class Playstat : MonoBehaviour
             {
                 currentStamina += staminaAdded;
 
-                // 1:1 ratio exchange with Hungry / Healthy
+                // Ratio exchange with Hungry / Healthy using configurable ratios from PlayerData
+                float hungryRatio = playerData.StaminaToHungryRatio;
+                float healthyRatio = playerData.StaminaToHealthyRatio;
+
                 if (currentHungry > 0f)
                 {
-                    currentHungry = Mathf.Max(0f, currentHungry - staminaAdded);
+                    currentHungry = Mathf.Max(0f, currentHungry - (staminaAdded * hungryRatio));
                 }
                 else
                 {
                     // Hungry is 0: deduct from Healthy instead
-                    currentHealthy = Mathf.Max(0f, currentHealthy - staminaAdded);
+                    currentHealthy = Mathf.Max(0f, currentHealthy - (staminaAdded * healthyRatio));
                 }
             }
         }
 
-        // 3. Update HungerState based on remaining Hungry percentage
+        // 5. Update HungerState based on remaining Hungry percentage
         UpdateHungerState();
 
-        // 4. Apply calculated movement speeds to ThirdPersonController
+        // 6. Apply calculated movement speeds to ThirdPersonController
         ApplySpeedToController();
     }
 
@@ -164,17 +177,48 @@ public class Playstat : MonoBehaviour
             }
         }
 
+        // Apply CarrySpeedMultiplier if currently holding an item
+        if (IsCarryingItem && playerData != null)
+        {
+            stateSpeedMultiplier *= playerData.CarrySpeedMultiplier;
+        }
+
+        // Apply CartBaseSpeedMultiplier if currently pushing a cart
+        if (IsPushingCart && playerData != null)
+        {
+            stateSpeedMultiplier *= playerData.CartBaseSpeedMultiplier;
+        }
+
         controller.MoveSpeed = _baseMoveSpeed * stateSpeedMultiplier;
         controller.SprintSpeed = _baseSprintSpeed * stateSpeedMultiplier;
     }
 
     public void EatFood(float amount)
     {
-        currentHungry = Mathf.Min(MaxHungry, currentHungry + amount);
+        currentHungry += amount;
+
+        if (currentHungry > MaxHungry)
+        {
+            float overflowHungry = currentHungry - MaxHungry;
+            currentHungry = MaxHungry;
+
+            // Convert excess Hungry to Stamina based on StaminaToHungryRatio
+            float hungryRatio =playerData.StaminaToHungryRatio;
+            float staminaGain = overflowHungry * hungryRatio;
+
+            currentStamina = Mathf.Min(MaxStamina, currentStamina + staminaGain);
+        }
     }
 
     public void Heal(float amount)
     {
         currentHealthy = Mathf.Min(MaxHealthy, currentHealthy + amount);
+    }
+
+    public bool ConsumeStamina(float amount)
+    {
+        if (currentStamina < amount) return false;
+        currentStamina = Mathf.Max(0f, currentStamina - amount);
+        return true;
     }
 }
