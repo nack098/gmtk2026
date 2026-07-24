@@ -15,11 +15,11 @@ MonoBehaviour:
   Items:
   - key: Apple
     value:
-      sellPrice: 20
+      SellPrice: 0
       capabilities: []
   - key: Orange
     value:
-      sellPrice: 10
+      SellPrice: 0
       capabilities: []
   references:
     version: 2

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: BilateralBloom
+  m_Shader: {fileID: 4800000, guid: bde95a1a48112c24385420953da4a066, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BloomIntensity: 1.34
+    - _BloomThreshold: 0.413
+    - _ColorSigma: 0.189
+    - _Contrast: 1
+    - _DepthSigma: 0.0148
+    - _Exposure: 0
+    - _Saturation: 1
+    - _SpatialSigma: 1.54
+    - _VignetteIntensity: 0.5
+    - _VignetteSmoothness: 0.4
+    m_Colors:
+    - _ColorTint: {r: 1, g: 1, b: 1, a: 1}
+    - _Highlights: {r: 1, g: 1, b: 1, a: 1}
+    - _Midtones: {r: 1, g: 1, b: 1, a: 1}
+    - _Shadows: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
