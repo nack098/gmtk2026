@@ -13,3 +13,20 @@ MonoBehaviour:
   m_Name: PlayerConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.PlayerData
   Speed: 1
+  Healthy: 100
+  Hungry: 100
+  Stamina: 100
+  StaminaRegen: 10
+  HungryMultiple: 1
+  StaminaToHungryRatio: 0.5
+  StaminaToHealthyRatio: 0.5
+  CarryStaminaDrainRate: 5
+  CarrySpeedMultiplier: 0.8
+  RummageStaminaCost: 15
+  CartBaseStaminaDrainRate: 1
+  CartWeightStaminaMultiplier: 1.1
+  CartBaseSpeedMultiplier: 1
+  PickUp: []
+  references:
+    version: 2
+    RefIds: []

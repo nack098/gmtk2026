@@ -16,11 +16,41 @@ MonoBehaviour:
   - key: Apple
     value:
       SellPrice: 0
-      capabilities: []
+      capabilities:
+      - rid: 7378900049062527049
+      - rid: 7378900049062527050
+      - rid: 7378900049062527051
+      - rid: 7378900049062527055
   - key: Orange
     value:
       SellPrice: 0
-      capabilities: []
+      capabilities:
+      - rid: 7378900049062527058
+      - rid: 7378900049062527059
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7378900049062527049
+      type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        RestoreAmount: 15
+    - rid: 7378900049062527050
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 10
+    - rid: 7378900049062527051
+      type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        BuyPrice: 0
+    - rid: 7378900049062527055
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1306707535233177299, guid: 55893cf3836ffab47a78edac84274ca7, type: 3}
+    - rid: 7378900049062527058
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 10
+    - rid: 7378900049062527059
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1306707535233177299, guid: 0df9dfe80888371448bcccbdc9064e3c, type: 3}
