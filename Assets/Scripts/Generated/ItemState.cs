@@ -6,9 +6,8 @@ namespace TrashCount.Data
     public enum ItemState
     {
         None = 0,
-        Test,
-        Test2,
-        Test3,
+        Apple,
+        Orange,
     }
 
     public partial class ItemData
@@ -27,12 +26,10 @@ namespace TrashCount.Data
 
             switch (state)
             {
-                case ItemState.Test:
-                    return data.Items.TryGetValue("Test", out var v_Test) ? v_Test : default;
-                case ItemState.Test2:
-                    return data.Items.TryGetValue("Test2", out var v_Test2) ? v_Test2 : default;
-                case ItemState.Test3:
-                    return data.Items.TryGetValue("Test3", out var v_Test3) ? v_Test3 : default;
+                case ItemState.Apple:
+                    return data.Items.TryGetValue("Apple", out var v_Apple) ? v_Apple : default;
+                case ItemState.Orange:
+                    return data.Items.TryGetValue("Orange", out var v_Orange) ? v_Orange : default;
                 default:
                     return default;
             }

@@ -7,8 +7,11 @@ namespace TrashCount.Data
     public class GameData : ScriptableObject
     {
         public uint Money;
+        public uint MaxInventorySize;
         public ClockModel DateTime = new();
         public CharacterModel PlayerData = new();
         public CharacterModel FatherData = new();
+        
+        public InventoryModel InventoryData = new();
     }
 }
