@@ -57,7 +57,7 @@ Shader "Custom/StylizedPostProcess"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             // Includes CBUFFER and bilateral functions in correct order
-            #include "BilateralBloom.hlsl"
+            #include "../Shaders/BilateralBloom.hlsl"
 
             float4 Frag(Varyings input) : SV_Target
             {

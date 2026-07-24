@@ -29,19 +29,19 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BloomIntensity: 0.67
-    - _BloomThreshold: 0.151
+    - _BloomIntensity: 0.6
+    - _BloomThreshold: 0.19
     - _ColorSigma: 0.33
-    - _Contrast: 1.01
+    - _Contrast: 0.99
     - _DepthSigma: 0.0395
-    - _Exposure: -0.38
-    - _Saturation: 0.206
+    - _Exposure: 0.1
+    - _Saturation: 0.262
     - _SpatialSigma: 1.69
-    - _VignetteIntensity: 1.61
-    - _VignetteSmoothness: 0.388
+    - _VignetteIntensity: 1.59
+    - _VignetteSmoothness: 0.403
     m_Colors:
-    - _ColorTint: {r: 0.5564703, g: 0.5650466, b: 0.5754717, a: 1}
-    - _Highlights: {r: 0.9198113, g: 0.9738563, b: 1, a: 1}
+    - _ColorTint: {r: 0.48593807, g: 0.5028836, b: 0.5283019, a: 1}
+    - _Highlights: {r: 0.9103774, g: 1, b: 0.9541096, a: 1}
     - _Midtones: {r: 0.9009434, g: 1, b: 0.9934867, a: 1}
     - _Shadows: {r: 0.9778842, g: 0.9764151, b: 1, a: 1}
   m_BuildTextureStacks: []

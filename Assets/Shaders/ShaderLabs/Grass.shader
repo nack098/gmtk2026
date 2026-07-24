@@ -22,7 +22,7 @@ Shader "Takayama/Grass"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             
-            #include "Grass.hlsl"
+            #include "../Shaders/Grass.hlsl"
             ENDHLSL
         }
 
@@ -37,7 +37,7 @@ Shader "Takayama/Grass"
             #pragma vertex vertShadow
             #pragma fragment fragShadow
             #pragma target 4.5
-            #include "GrassShadow.hlsl"
+            #include "../Shaders/GrassShadow.hlsl"
             ENDHLSL
         }
     }
