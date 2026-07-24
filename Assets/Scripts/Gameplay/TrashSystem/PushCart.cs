@@ -107,9 +107,22 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent<WorldItem>(out var worldItem))
+            TryAddItemToCart(other);
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            TryAddItemToCart(other);
+        }
+
+        private void TryAddItemToCart(Collider other)
+        {
+            if (other == null) return;
+
+            if (other.TryGetComponent<WorldItem>(out var worldItem) ||
+                other.GetComponentInParent<WorldItem>() is WorldItem parentItem && (worldItem = parentItem) != null)
             {
-                if (!_itemsInCart.Contains(worldItem) && !worldItem.IsCarried)
+                if (!worldItem.IsCarried && !_itemsInCart.Contains(worldItem))
                 {
                     _itemsInCart.Add(worldItem);
                     worldItem.transform.SetParent(basketContainer);
@@ -120,12 +133,15 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent<WorldItem>(out var worldItem))
+            if (other == null) return;
+
+            if (other.TryGetComponent<WorldItem>(out var worldItem) ||
+                other.GetComponentInParent<WorldItem>() is WorldItem parentItem && (worldItem = parentItem) != null)
             {
                 if (_itemsInCart.Contains(worldItem))
                 {
                     _itemsInCart.Remove(worldItem);
-                    if (worldItem.transform.parent == basketContainer)
+                    if (!worldItem.IsCarried && worldItem.transform.parent == basketContainer)
                     {
                         worldItem.transform.SetParent(null);
                     }

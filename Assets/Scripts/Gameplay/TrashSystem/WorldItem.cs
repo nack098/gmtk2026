@@ -30,21 +30,20 @@ namespace TrashCount.Gameplay.TrashSystem
 
         public string GetInteractPrompt()
         {
-            if (IsCarried)
-            {
-                return $"กด E เพื่อวาง {itemState} | กด F เพื่อกิน";
-            }
-            return $"กด E เพื่ออุ้ม/ยก {itemState}";
+            return $"กด E เพื่อยก {itemState}";
         }
 
         public bool CanInteract(GameObject interactor)
         {
-            return itemState != ItemState.None;
+            return !IsCarried && itemState != ItemState.None;
         }
 
         public void Interact(GameObject interactor)
         {
-            // Handled via PlayerInteraction carrying system
+            if (interactor != null && interactor.TryGetComponent<PlayerInteraction>(out var playerInteraction))
+            {
+                playerInteraction.PickUpItem(this);
+            }
         }
 
         public void PickUpToSocket(Transform holdSocket)
@@ -63,11 +62,7 @@ namespace TrashCount.Gameplay.TrashSystem
             IsCarried = false;
             transform.SetParent(null);
 
-            // Raycast down to find ground surface safely
-            if (Physics.Raycast(dropPosition + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 3.0f))
-            {
-                dropPosition.y = hit.point.y + 0.15f; // Place slightly above hit ground point
-            }
+        
 
             transform.position = dropPosition;
 
@@ -80,6 +75,8 @@ namespace TrashCount.Gameplay.TrashSystem
 
         public bool TryConsume(Playstat player)
         {
+            if (player == null) return false;
+
             if (itemData != null)
             {
                 ItemModel model = itemData[itemState];
@@ -90,6 +87,10 @@ namespace TrashCount.Gameplay.TrashSystem
                     Destroy(gameObject);
                     return true;
                 }
+            }
+            else
+            {
+                Debug.LogWarning($"[WorldItem] Cannot consume {itemState} because ItemData reference is missing on {gameObject.name}.");
             }
             return false;
         }

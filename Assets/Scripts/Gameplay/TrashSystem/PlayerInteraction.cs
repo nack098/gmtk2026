@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TrashCount.Gameplay.Abstracts;
@@ -10,14 +9,11 @@ namespace TrashCount.Gameplay.TrashSystem
         [Header("Interaction Settings")]
         [SerializeField] private Collider interactionTrigger;
         [SerializeField] private LayerMask interactableMask = ~0; // Default to all layers
-        [SerializeField] private KeyCode interactKey;  
+        [SerializeField] private KeyCode interactKey ;
         [SerializeField] private KeyCode consumeKey ;
 
         [Header("Carrying Socket Settings")]
         [SerializeField] private Transform holdSocket;
-
-        [Header("Current Target (Read-Only)")]
-        [SerializeField] private string currentPrompt = "";
 
         public IInteractable CurrentInteractable { get; private set; }
         public WorldItem CarriedItem { get; private set; }
@@ -26,15 +22,29 @@ namespace TrashCount.Gameplay.TrashSystem
         public PushCart CurrentPushedCart { get; private set; }
         public bool IsPushingCart => CurrentPushedCart != null;
 
-        public event Action<string> OnPromptChanged;
-
         private List<Collider> _candidatesInTrigger = new List<Collider>();
         private Playstat _playStat;
 
-    
+        private void Awake()
+        {
+            _playStat = GetComponent<Playstat>();
+
+            if (holdSocket == null)
+            {
+                GameObject socketObj = new GameObject("HoldSocket");
+                socketObj.transform.SetParent(transform);
+                socketObj.transform.localPosition = new Vector3(0f, 1.2f, 0.8f);
+                holdSocket = socketObj.transform;
+            }
+        }
+
         public void SetPushedCart(PushCart cart)
         {
             CurrentPushedCart = cart;
+            if (_playStat != null)
+            {
+                _playStat.IsPushingCart = CurrentPushedCart != null;
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -42,9 +52,14 @@ namespace TrashCount.Gameplay.TrashSystem
             if (other == null || other.gameObject == gameObject) return;
             if (((1 << other.gameObject.layer) & interactableMask) == 0) return;
 
-            if (!_candidatesInTrigger.Contains(other))
+            // Check for IInteractable (supports WorldItem, PushCartHandle, TrashContainer)
+            if (other.TryGetComponent<IInteractable>(out var interactable) ||
+                other.GetComponentInParent<IInteractable>() is IInteractable parentInteractable)
             {
-                _candidatesInTrigger.Add(other);
+                if (!_candidatesInTrigger.Contains(other))
+                {
+                    _candidatesInTrigger.Add(other);
+                }
             }
         }
 
@@ -77,12 +92,10 @@ namespace TrashCount.Gameplay.TrashSystem
 
             if (IsPushingCart)
             {
-                UpdatePushingCartPrompt();
                 HandlePushingCartInput();
             }
             else if (IsCarrying)
             {
-                UpdateCarryingPrompt();
                 HandleCarryingInput();
             }
             else
@@ -121,55 +134,14 @@ namespace TrashCount.Gameplay.TrashSystem
                 }
             }
 
-            if (closestInteractable != CurrentInteractable)
-            {
-                CurrentInteractable = closestInteractable;
-                currentPrompt = CurrentInteractable != null ? CurrentInteractable.GetInteractPrompt() : "";
-                OnPromptChanged?.Invoke(currentPrompt);
-            }
-            else if (CurrentInteractable != null)
-            {
-                string newPrompt = CurrentInteractable.GetInteractPrompt();
-                if (newPrompt != currentPrompt)
-                {
-                    currentPrompt = newPrompt;
-                    OnPromptChanged?.Invoke(currentPrompt);
-                }
-            }
-        }
-
-        private void UpdateCarryingPrompt()
-        {
-            string prompt = CarriedItem != null ? CarriedItem.GetInteractPrompt() : "";
-            if (prompt != currentPrompt)
-            {
-                currentPrompt = prompt;
-                OnPromptChanged?.Invoke(currentPrompt);
-            }
-        }
-
-        private void UpdatePushingCartPrompt()
-        {
-            string prompt = "กด E เพื่อปล่อยมือจากรถเข็น";
-            if (prompt != currentPrompt)
-            {
-                currentPrompt = prompt;
-                OnPromptChanged?.Invoke(currentPrompt);
-            }
+            CurrentInteractable = closestInteractable;
         }
 
         private void HandleInput()
         {
             if (CurrentInteractable != null && IsInteractKeyPressed())
             {
-                if (CurrentInteractable is WorldItem worldItem)
-                {
-                    PickUpItem(worldItem);
-                }
-                else
-                {
-                    CurrentInteractable.Interact(gameObject);
-                }
+                CurrentInteractable.Interact(gameObject);
             }
         }
 
@@ -200,8 +172,6 @@ namespace TrashCount.Gameplay.TrashSystem
                 CurrentPushedCart.StopPushing();
                 SetPushedCart(null);
             }
-            currentPrompt = "";
-            OnPromptChanged?.Invoke(currentPrompt);
         }
 
         public void PickUpItem(WorldItem worldItem)
@@ -223,7 +193,9 @@ namespace TrashCount.Gameplay.TrashSystem
         {
             if (CarriedItem == null) return;
 
-            Vector3 dropPos = transform.position + transform.forward * 0.8f + Vector3.up * 0.8f;
+            Vector3 dropPos = transform.position + transform.forward * 0.8f;
+            dropPos.y = holdSocket != null ? holdSocket.position.y : transform.position.y + 1.2f;
+
             CarriedItem.DropToGround(dropPos);
 
             CarriedItem = null;
@@ -231,9 +203,6 @@ namespace TrashCount.Gameplay.TrashSystem
             {
                 _playStat.IsCarryingItem = false;
             }
-
-            currentPrompt = "";
-            OnPromptChanged?.Invoke(currentPrompt);
         }
 
         public void ConsumeCarriedItem()
@@ -247,9 +216,6 @@ namespace TrashCount.Gameplay.TrashSystem
                 {
                     _playStat.IsCarryingItem = false;
                 }
-
-                currentPrompt = "";
-                OnPromptChanged?.Invoke(currentPrompt);
             }
             else
             {
@@ -296,14 +262,7 @@ namespace TrashCount.Gameplay.TrashSystem
             }
             else if (CurrentInteractable != null)
             {
-                if (CurrentInteractable is WorldItem worldItem)
-                {
-                    PickUpItem(worldItem);
-                }
-                else
-                {
-                    CurrentInteractable.Interact(gameObject);
-                }
+                CurrentInteractable.Interact(gameObject);
             }
         }
 
@@ -316,5 +275,3 @@ namespace TrashCount.Gameplay.TrashSystem
         }
     }
 }
-
-
