@@ -9,9 +9,6 @@ public class Playstat_UI : MonoBehaviour
     public Image staminaImage;
 
     [Header("GameObject References (Inspector)")]
-    public GameObject HealthyBar;
-    public GameObject HungryBar;
-    public GameObject StaminaBar;
     public GameObject Character;
 
     private Playstat _playStat;
@@ -23,11 +20,6 @@ public class Playstat_UI : MonoBehaviour
 
     private void SetupComponents()
     {
-        // 1. Resolve Image components from GameObjects if assigned as GameObject
-        if (healthyImage == null && HealthyBar != null) healthyImage = HealthyBar.GetComponent<Image>();
-        if (hungryImage == null && HungryBar != null) hungryImage = HungryBar.GetComponent<Image>();
-        if (staminaImage == null && StaminaBar != null) staminaImage = StaminaBar.GetComponent<Image>();
-
         // 2. Resolve Playstat reference
         if (_playStat == null)
         {

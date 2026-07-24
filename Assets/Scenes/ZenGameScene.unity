@@ -496,7 +496,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dade25bc4ee2f8745a527092b6a0c368, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.HungerSystem
-  hungerData: {fileID: 11400000, guid: 8f4854f2837121a41a7d6931afbfabc7, type: 2}
+  hungerData: {fileID: 11400000, guid: 318330c721efd9444a53858383ce88d5, type: 2}
 --- !u!114 &362214855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,7 +506,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 362214852}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e4c7239bc746dc43bdcd00e3eb2f3fb, type: 3}
+  m_Script: {fileID: 11500000, guid: d9cf78012a7554341a7f744941d25df4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Playstat
   playerData: {fileID: 11400000, guid: dad1442104b0ddd4eb918c0f1b4e682d, type: 2}
@@ -1367,15 +1367,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 922660626}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40ef429c029d46f4ca28f053b0b111b0, type: 3}
+  m_Script: {fileID: 11500000, guid: c8fec5a2b1ce4f045811e98acdf5dac4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Playstat_UI
   healthyImage: {fileID: 1320569078}
   hungryImage: {fileID: 765081739}
   staminaImage: {fileID: 280140401}
-  HealthyBar: {fileID: 1320569076}
-  HungryBar: {fileID: 765081737}
-  StaminaBar: {fileID: 280140400}
   Character: {fileID: 362214852}
 --- !u!1 &1236203422
 GameObject:

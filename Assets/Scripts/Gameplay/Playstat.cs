@@ -85,7 +85,7 @@ public class Playstat : MonoBehaviour
 
         if (isRegeneratingStamina)
         {
-            float hungerMultiplier = hungerSystem.Data[hungerSystem.CurrentStateKey];
+            float hungerMultiplier = hungerSystem.Data[hungerSystem.CurrentStateKey].DrainValue;
 
             // While walking (moving without sprinting), apply walkingStaminaRegenMultiplier (e.g. 50% rate)
             float moveStateMultiplier = isMoving ? walkingStaminaRegenMultiplier : 1.0f;
@@ -150,16 +150,13 @@ public class Playstat : MonoBehaviour
             switch (hungerSystem.CurrentStateKey)
             {
                 case HungerState.Normal:
-                    stateSpeedMultiplier = 1.0f;
+                    stateSpeedMultiplier = hungerSystem.Data[HungerState.Normal].MoveSpeedMultiplier;
                     break;
                 case HungerState.Hungry:
-                    stateSpeedMultiplier = 1f;
+                    stateSpeedMultiplier = hungerSystem.Data[HungerState.Hungry].MoveSpeedMultiplier;
                     break;
                 case HungerState.Starving:
-                    stateSpeedMultiplier = 1f;
-                    break;
-                case HungerState.Test:
-                    stateSpeedMultiplier = 0.5f;
+                    stateSpeedMultiplier = hungerSystem.Data[HungerState.Starving].MoveSpeedMultiplier;
                     break;
                 default:
                     stateSpeedMultiplier = 1.0f;

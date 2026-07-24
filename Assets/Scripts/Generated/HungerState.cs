@@ -6,7 +6,9 @@ namespace TrashCount.Data
     public enum HungerState
     {
         None = 0,
-        Test,
+        Normal,
+        Hungry,
+        Starving,
     }
 
     public partial class HungerData
@@ -25,8 +27,12 @@ namespace TrashCount.Data
 
             switch (state)
             {
-                case HungerState.Test:
-                    return data.Values.TryGetValue("Test", out var v_Test) ? v_Test : default;
+                case HungerState.Normal:
+                    return data.Values.TryGetValue("Normal ", out var v_Normal) ? v_Normal : default;
+                case HungerState.Hungry:
+                    return data.Values.TryGetValue("Hungry ", out var v_Hungry) ? v_Hungry : default;
+                case HungerState.Starving:
+                    return data.Values.TryGetValue("Starving ", out var v_Starving) ? v_Starving : default;
                 default:
                     return default;
             }
