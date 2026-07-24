@@ -607,8 +607,8 @@ GameObject:
   - component: {fileID: 1049395787}
   - component: {fileID: 1049395786}
   - component: {fileID: 1049395785}
-  - component: {fileID: 1049395788}
   - component: {fileID: 1049395789}
+  - component: {fileID: 1049395788}
   m_Layer: 0
   m_Name: Ganeplay System
   m_TagString: Untagged
