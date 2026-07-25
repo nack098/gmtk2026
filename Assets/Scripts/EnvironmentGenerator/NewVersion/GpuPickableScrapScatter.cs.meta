@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: acb2e8e20b8b557499ae0144bb065125
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _generator: {instanceID: 0}
+  - _visualizer: {instanceID: 0}
+  - _pickableCS: {fileID: 7200000, guid: 0e708e3e1f373ad4fb4cc30322dbf35d, type: 3}
+  - _scrapContainer: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

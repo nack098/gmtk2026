@@ -2,6 +2,10 @@ Shader "Custom/TerrainTriplanar"
 {
     Properties
     {
+        [Header(Heightmap Displacement)]
+        _HeightMap ("Heightmap Texture (RFloat)", 2D) = "black" {}
+        _HeightScale ("Height Scale", Float) = 15.0
+
         [Header(Base Tint)]
         _BaseColor ("Base Tint Color", Color) = (0.6, 0.55, 0.5, 1.0)
 
@@ -50,22 +54,27 @@ Shader "Custom/TerrainTriplanar"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
+                float2 uv         : TEXCOORD1;
             };
 
-            TEXTURE2D(_TopTex);  SAMPLER(sampler_TopTex);
-            TEXTURE2D(_SideTex); SAMPLER(sampler_SideTex);
-            TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
+            TEXTURE2D(_HeightMap); SAMPLER(sampler_HeightMap);
+            TEXTURE2D(_TopTex);    SAMPLER(sampler_TopTex);
+            TEXTURE2D(_SideTex);   SAMPLER(sampler_SideTex);
+            TEXTURE2D(_BumpMap);   SAMPLER(sampler_BumpMap);
 
             CBUFFER_START(UnityPerMaterial)
+                float4 _HeightMap_TexelSize;
                 float4 _BaseColor;
                 float4 _ShadowColor;
                 float4 _SpecularColor;
+                float _HeightScale;
                 float _TopScale;
                 float _SideScale;
                 float _BumpScale;
@@ -88,9 +97,19 @@ Shader "Custom/TerrainTriplanar"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                VertexPositionInputs posInputs = GetVertexPositionInputs(input.positionOS.xyz);
+
+                // 1. Sample Heightmap at Mesh UVs (0..1)
+                float height = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, input.uv, 0).r;
+                
+                // 2. Displace Vertex Position along local Y axis
+                float3 displacedPosOS = input.positionOS.xyz;
+                displacedPosOS.y += height * _HeightScale;
+
+                // 3. Compute World Space Coordinates
+                VertexPositionInputs posInputs = GetVertexPositionInputs(displacedPosOS);
                 output.positionCS = posInputs.positionCS;
                 output.positionWS = posInputs.positionWS;
+                output.uv = input.uv;
                 return output;
             }
 
@@ -101,7 +120,7 @@ Shader "Custom/TerrainTriplanar"
                 // 1. Quantized Coordinates for Voxel/Block UV Lookups
                 float3 blockyWorldPos = floor(worldPos / _BlockSize) * _BlockSize;
 
-                // 2. Flat Triangle Face Normal
+                // 2. Flat Triangle Face Normal (Recomputed dynamically from displaced positions!)
                 float3 dX = ddx(worldPos);
                 float3 dY = ddy(worldPos);
                 float3 flatNormal = normalize(cross(dY, dX));

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6b537c80c03d9d44b82fff49ca67b8d4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _terrainGenerator: {instanceID: 0}
+  - _visualizer: {instanceID: 0}
+  - _scatterShader: {fileID: 7200000, guid: 1e7fbb9ad7c5c7140bd3f600c352360b, type: 3}
+  - _cullingShader: {fileID: 7200000, guid: 8a6a25fbfa4e4784193c7b3f610e054a, type: 3}
+  - _targetCamera: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

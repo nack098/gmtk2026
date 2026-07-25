@@ -1,0 +1,192 @@
+#pragma kernel K_StepCA
+#pragma kernel K_UpscaleCA
+#pragma kernel K_SeedJFA
+#pragma kernel K_StepJFA
+#pragma kernel K_FinalizeDistanceCones
+#pragma kernel K_ApplyWarpAndRoughness
+
+// Textures
+RWTexture2D<float> _GridA;
+RWTexture2D<float> _GridB;
+RWTexture2D<float4> _JFA_A; // RG = nearest seed pixel coords (xy), B = active flag
+RWTexture2D<float4> _JFA_B;
+RWTexture2D<float> _FinalHeightmap; // Fixed to RWTexture2D<float> for RFloat precision!
+
+// Uniforms
+int _Res;
+int _Threshold;
+int _StepDistance;
+float _MaxInfluenceRadius;
+float _PileSteepness;
+float _WarpFrequency;
+float _WarpAmplitude;
+float _DebrisFrequency;
+float _DebrisStrength;
+float2 _NoiseOffset;
+
+// Helper: Classic 2D Perlin Noise in HLSL
+float2 hash22(float2 p)
+{
+    p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
+    return -1.0 + 2.0 * frac(sin(p) * 43758.5453123);
+}
+
+float perlin_noise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+
+    return lerp(lerp(dot(hash22(i + float2(0.0, 0.0)), f - float2(0.0, 0.0)),
+                     dot(hash22(i + float2(1.0, 0.0)), f - float2(1.0, 0.0)), u.x),
+                lerp(dot(hash22(i + float2(0.0, 1.0)), f - float2(0.0, 1.0)),
+                     dot(hash22(i + float2(1.0, 1.0)), f - float2(1.0, 1.0)), u.x), u.y);
+}
+
+// 1. Cellular Automata Step
+[numthreads(8, 8, 1)]
+void K_StepCA(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+
+    int neighbors = 0;
+    for (int cy = -1; cy <= 1; ++cy)
+    {
+        for (int cx = -1; cx <= 1; ++cx)
+        {
+            if (cx == 0 && cy == 0) continue;
+            int2 nx = int2(id.x + cx, id.y + cy);
+            if (nx.x >= 0 && nx.x < _Res && nx.y >= 0 && nx.y < _Res)
+            {
+                if (_GridA[nx] > 0.5) neighbors++;
+            }
+        }
+    }
+
+    bool currentState = _GridA[id.xy] > 0.5;
+    int required = currentState ? (_Threshold - 1) : _Threshold;
+    _GridB[id.xy] = (neighbors >= required) ? 1.0 : 0.0;
+}
+
+// 2. Nearest Neighbor 2x Upscale
+[numthreads(8, 8, 1)]
+void K_UpscaleCA(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+    int2 srcUV = id.xy / 2;
+    _GridB[id.xy] = _GridA[srcUV];
+}
+
+// 3. Jump Flood Algorithm (JFA) Distance Fields
+[numthreads(8, 8, 1)]
+void K_SeedJFA(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+    
+    if (_GridA[id.xy] > 0.5)
+    {
+        _JFA_A[id.xy] = float4((float)id.x, (float)id.y, 1.0, 1.0);
+    }
+    else
+    {
+        _JFA_A[id.xy] = float4(-10000.0, -10000.0, 0.0, 0.0);
+    }
+}
+
+[numthreads(8, 8, 1)]
+void K_StepJFA(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+
+    float2 bestCoord = _JFA_A[id.xy].xy;
+    float bestDist = length(id.xy - bestCoord);
+
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            int2 samplePos = id.xy + int2(x, y) * _StepDistance;
+            if (samplePos.x >= 0 && samplePos.x < _Res && samplePos.y >= 0 && samplePos.y < _Res)
+            {
+                float4 data = _JFA_A[samplePos];
+                if (data.z > 0.5)
+                {
+                    float dist = length(id.xy - data.xy);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestCoord = data.xy;
+                    }
+                }
+            }
+        }
+    }
+
+    _JFA_B[id.xy] = float4(bestCoord, (bestCoord.x >= 0) ? 1.0 : 0.0, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void K_FinalizeDistanceCones(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+
+    if (_GridA[id.xy] > 0.5)
+    {
+        _GridB[id.xy] = 1.0;
+        return;
+    }
+
+    float4 jfaData = _JFA_A[id.xy];
+    if (jfaData.z < 0.5)
+    {
+        _GridB[id.xy] = 0.0;
+        return;
+    }
+
+    float dist = length(id.xy - jfaData.xy);
+    if (dist < _MaxInfluenceRadius)
+    {
+        float normDist = 1.0 - (dist / _MaxInfluenceRadius);
+        _GridB[id.xy] = pow(clamp(normDist, 0.0, 1.0), _PileSteepness);
+    }
+    else
+    {
+        _GridB[id.xy] = 0.0;
+    }
+}
+
+// 4. Domain Warping & Debris Roughness Pass
+[numthreads(8, 8, 1)]
+void K_ApplyWarpAndRoughness(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Res || id.y >= (uint)_Res) return;
+
+    float2 uv = (float2)id.xy + _NoiseOffset;
+
+    // Domain Warping
+    float noiseX = perlin_noise(uv * _WarpFrequency) * 2.0;
+    float noiseY = perlin_noise((uv + float2(500.0, 500.0)) * _WarpFrequency) * 2.0;
+
+    float2 warpedPos = clamp((float2)id.xy + float2(noiseX, noiseY) * _WarpAmplitude, 0.0, (float)_Res - 1.0);
+
+    // Fixed Bilinear Interpolation
+    int2 uv00 = floor(warpedPos);
+    int2 uv10 = min(uv00 + int2(1, 0), _Res - 1);
+    int2 uv01 = min(uv00 + int2(0, 1), _Res - 1);
+    int2 uv11 = min(uv00 + int2(1, 1), _Res - 1);
+    float2 f = frac(warpedPos);
+
+    float bottom = lerp(_GridA[uv00], _GridA[uv10], f.x);
+    float top = lerp(_GridA[uv01], _GridA[uv11], f.x);
+    float baseHeight = lerp(bottom, top, f.y);
+
+    // Debris Roughness
+    float finalHeight = 0.0;
+    if (baseHeight > 0.001)
+    {
+        float microNoise = perlin_noise((uv + float2(123.4, 567.8)) * _DebrisFrequency) * _DebrisStrength;
+        finalHeight = saturate(baseHeight + microNoise * baseHeight);
+    }
+
+    _FinalHeightmap[id.xy] = finalHeight;
+}

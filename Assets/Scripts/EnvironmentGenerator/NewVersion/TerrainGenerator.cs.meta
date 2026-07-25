@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: b6ed6e8181d0861489b612536d8fe033
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _terrainCS: {fileID: 7200000, guid: 0bb7bba1953289a4681a890bfd11d705, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

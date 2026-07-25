@@ -12,7 +12,9 @@ namespace TrashCount.Data
         
         public void GenerateEnum()
         {
+            #if UNITY_EDITOR
             EnumGenerator.GenerateFromDictionary("ItemState", nameof(ItemData), nameof(Items), Items);
+            #endif
         }
     }
 }

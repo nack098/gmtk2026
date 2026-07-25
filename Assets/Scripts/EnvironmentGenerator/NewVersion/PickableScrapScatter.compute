@@ -1,0 +1,92 @@
+#pragma kernel K_GeneratePickables
+
+struct PickableData
+{
+    float4 position;
+    float4 normal;
+    float scale;
+    int prefabIndex;
+};
+
+Texture2D<float4> _HeightMap;
+SamplerState sampler_HeightMap;
+
+RWStructuredBuffer<PickableData> _PickableBuffer;
+RWStructuredBuffer<uint> _CounterBuffer;
+
+int _ScrapDensityGrid;
+float _MinHeightThreshold;
+float _BasePoissonLambda;
+float _PositionJitter;
+float2 _ScaleRange;
+float _MeshSize;
+float _HeightScale;
+int _PrefabCount;
+float4x4 _LocalToWorldMatrix;
+uint _Seed;
+
+float hash12(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+float randomRange(float2 id, float minVal, float maxVal)
+{
+    return minVal + hash12(id + _Seed) * (maxVal - minVal);
+}
+
+[numthreads(8, 8, 1)]
+void K_GeneratePickables(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_ScrapDensityGrid || id.y >= (uint)_ScrapDensityGrid) return;
+
+    float stepSize = _MeshSize / (float)_ScrapDensityGrid;
+    float worldX = ((float)id.x * stepSize) - (_MeshSize * 0.5);
+    float worldZ = ((float)id.y * stepSize) - (_MeshSize * 0.5);
+
+    float2 uv = float2(((float)id.x + 0.5) / (float)_ScrapDensityGrid, ((float)id.y + 0.5) / (float)_ScrapDensityGrid);
+    float heightVal = _HeightMap.SampleLevel(sampler_HeightMap, uv, 0).r;
+
+    if (heightVal < _MinHeightThreshold) return;
+
+    float currentLambda = _BasePoissonLambda * heightVal;
+    float2 sampleSeed = (float2)id.xy + float2(17.13, 43.71);
+    float pProb = hash12(sampleSeed + _Seed);
+
+    if (pProb < currentLambda)
+    {
+        float jitterX = randomRange(sampleSeed + float2(1.1, 2.2), -_PositionJitter, _PositionJitter);
+        float jitterZ = randomRange(sampleSeed + float2(3.3, 4.4), -_PositionJitter, _PositionJitter);
+
+        float localY = heightVal * _HeightScale;
+        float3 localPos = float3(worldX + jitterX, localY, worldZ + jitterZ);
+        float4 worldPos = mul(_LocalToWorldMatrix, float4(localPos, 1.0));
+
+        float2 texelSize = float2(1.0 / (float)_ScrapDensityGrid, 1.0 / (float)_ScrapDensityGrid);
+        float hL = _HeightMap.SampleLevel(sampler_HeightMap, uv - float2(texelSize.x, 0), 0).r * _HeightScale;
+        float hR = _HeightMap.SampleLevel(sampler_HeightMap, uv + float2(texelSize.x, 0), 0).r * _HeightScale;
+        float hD = _HeightMap.SampleLevel(sampler_HeightMap, uv - float2(0, texelSize.y), 0).r * _HeightScale;
+        float hU = _HeightMap.SampleLevel(sampler_HeightMap, uv + float2(0, texelSize.y), 0).r * _HeightScale;
+
+        float3 localNormal = normalize(float3(hL - hR, 2.0 * stepSize, hD - hU));
+        float3x3 worldRot = (float3x3)_LocalToWorldMatrix;
+        float3 worldNormal = normalize(mul(worldRot, localNormal));
+
+        float scale = randomRange(sampleSeed + float2(2.3, 3.4), _ScaleRange.x, _ScaleRange.y);
+        float randPrefab = hash12(sampleSeed + float2(5.5, 6.6));
+        int prefabIdx = clamp((int)(randPrefab * (float)_PrefabCount), 0, _PrefabCount - 1);
+
+        uint writeIndex;
+        InterlockedAdd(_CounterBuffer[0], 1, writeIndex);
+
+        PickableData data;
+        data.position = worldPos;
+        data.normal = float4(worldNormal, 0.0);
+        data.scale = scale;
+        data.prefabIndex = prefabIdx;
+
+        _PickableBuffer[writeIndex] = data;
+    }
+}

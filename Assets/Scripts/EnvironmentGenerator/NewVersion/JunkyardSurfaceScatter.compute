@@ -1,0 +1,141 @@
+#pragma kernel K_ScatterJunk
+
+struct ScrapInstanceData
+{
+    float id;          
+    float3 rotation;   // Pitch (X), Yaw (Y), Roll (Z) in degrees
+    float2 scale;      
+    float3 position;   
+    float3 normal;     
+    float pad;         
+};
+
+RWStructuredBuffer<ScrapInstanceData> _InstanceBuffer;
+RWStructuredBuffer<uint> _CounterBuffer;
+
+Texture2D<float4> _HeightMap;
+SamplerState sampler_HeightMap;
+
+int _ScrapDensityGrid;
+float _BasePoissonLambda;
+float _PositionJitter;
+float2 _ScaleRange;
+float _MeshSize;
+float _HeightScale;
+float4x4 _LocalToWorldMatrix;
+int _Seed;
+int _ScrapTypeCount;
+int _MaxInstanceCapacity;
+
+// Height Density Controls
+float _HeightCutoff;    
+float _HeightExponent;  
+
+float randomFloat(inout float2 seed)
+{
+    seed = frac(seed * float2(12.9898, 78.233));
+    return frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float randomRange(inout float2 seed, float minVal, float maxVal)
+{
+    return minVal + randomFloat(seed) * (maxVal - minVal);
+}
+
+[numthreads(8, 8, 1)]
+void K_ScatterJunk(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_ScrapDensityGrid || id.y >= (uint)_ScrapDensityGrid) return;
+
+    float2 cellStep = float2(1.0 / _ScrapDensityGrid, 1.0 / _ScrapDensityGrid);
+    float2 baseUV = (float2(id.xy) + float2(0.5, 0.5)) * cellStep;
+
+    // 1. Height Sample & Masking
+    float cellHeightNorm = _HeightMap.SampleLevel(sampler_HeightMap, baseUV, 0).r;
+    if (cellHeightNorm < _HeightCutoff) return;
+
+    float remappedHeight = saturate((cellHeightNorm - _HeightCutoff) / max(0.001, 1.0 - _HeightCutoff));
+    float heightDensityFactor = pow(remappedHeight, _HeightExponent);
+
+    float2 seed = baseUV + float2(_Seed * 0.171, _Seed * 0.389);
+    float baseLambda = randomRange(seed, _BasePoissonLambda * 0.5, _BasePoissonLambda * 1.5);
+    float lambda = baseLambda * heightDensityFactor;
+
+    // 2. Evaluate actual Poisson Count for this cell (Inlined for WebGPU compliance)
+    uint spawnCount = 0u;
+    if (lambda > 0.0)
+    {
+        float L = exp(-lambda);
+        float p = 1.0;
+
+        [unroll(12)]
+        for (uint i = 0u; i < 12u; i++)
+        {
+            p *= randomFloat(seed);
+            if (p <= L) break;
+            spawnCount++;
+        }
+    }
+
+    if (spawnCount == 0u) return;
+
+    // 3. Scatter Points with proper Jittered Sub-Cell Spacing
+    for (uint k = 0u; k < spawnCount; k++)
+    {
+        // Unsigned integer modulus & division for WebGPU optimization
+        float subCellX = (float)(k % 3u) / 3.0 - 0.33;
+        float subCellY = (float)(k / 3u) / 3.0 - 0.33;
+
+        float jitterX = randomRange(seed, -_PositionJitter, _PositionJitter) + subCellX;
+        float jitterY = randomRange(seed, -_PositionJitter, _PositionJitter) + subCellY;
+        
+        float2 sampleUV = clamp(baseUV + float2(jitterX, jitterY) * cellStep, float2(0.0, 0.0), float2(1.0, 1.0));
+
+        float heightNorm = _HeightMap.SampleLevel(sampler_HeightMap, sampleUV, 0).r;
+        
+        // World Space Calculation
+        float localX = (sampleUV.x - 0.5) * _MeshSize;
+        float localZ = (sampleUV.y - 0.5) * _MeshSize;
+        float localY = heightNorm * _HeightScale;
+        float4 worldPos = mul(_LocalToWorldMatrix, float4(localX, localY, localZ, 1.0));
+
+        // Surface Normal Calculation
+        float delta = 1.0 / _ScrapDensityGrid;
+        float hL = _HeightMap.SampleLevel(sampler_HeightMap, clamp(sampleUV + float2(-delta, 0.0), 0.0, 1.0), 0).r * _HeightScale;
+        float hR = _HeightMap.SampleLevel(sampler_HeightMap, clamp(sampleUV + float2(delta, 0.0), 0.0, 1.0), 0).r * _HeightScale;
+        float hD = _HeightMap.SampleLevel(sampler_HeightMap, clamp(sampleUV + float2(0.0, -delta), 0.0, 1.0), 0).r * _HeightScale;
+        float hU = _HeightMap.SampleLevel(sampler_HeightMap, clamp(sampleUV + float2(0.0, delta), 0.0, 1.0), 0).r * _HeightScale;
+
+        float3 tangentX = normalize(float3(2.0 * delta * _MeshSize, hR - hL, 0.0));
+        float3 tangentZ = normalize(float3(0.0, hU - hD, 2.0 * delta * _MeshSize));
+        float3 localNormal = normalize(cross(tangentZ, tangentX));
+        float3 worldNormal = normalize(mul((float3x3)_LocalToWorldMatrix, localNormal));
+
+        // Random Rotations & Scales
+        float pitch = randomRange(seed, -30.0, 30.0); 
+        float rotY  = randomRange(seed, 0.0, 360.0);   
+        float roll  = randomRange(seed, -30.0, 30.0); 
+
+        float baseScale = randomRange(seed, _ScaleRange.x, _ScaleRange.y);
+        float heightFactor = randomRange(seed, 0.8, 1.3);
+
+        float typeRand = randomFloat(seed);
+        uint selectedType = (uint)(typeRand * (float)_ScrapTypeCount);
+        selectedType = clamp(selectedType, 0u, (uint)max(1, _ScrapTypeCount - 1));
+
+        uint writeIndex;
+        InterlockedAdd(_CounterBuffer[0], 1u, writeIndex);
+
+        if (writeIndex >= (uint)_MaxInstanceCapacity) return;
+
+        ScrapInstanceData instance;
+        instance.id = (float)selectedType;
+        instance.rotation = float3(pitch, rotY, roll);
+        instance.scale = float2(baseScale, baseScale * heightFactor);
+        instance.position = worldPos.xyz;
+        instance.normal = worldNormal;
+        instance.pad = 0.0;
+
+        _InstanceBuffer[writeIndex] = instance;
+    }
+}

@@ -3,11 +3,12 @@
 
 struct GrassData
 {
-    float id;
-    float value;
-    float2 pad0;
-    float3 position;
-    float pad1;
+    float id;          // 4 bytes  (Always 0.0)
+    float3 rotation;   // 12 bytes (Pitch, Yaw, Roll in deg)
+    float2 scale;      // 8 bytes  (Width, Height)
+    float3 position;   // 12 bytes (World Pos)
+    float3 normal;     // 12 bytes (Surface Up)
+    float pad;         // 4 bytes
 };
 
 #endif
