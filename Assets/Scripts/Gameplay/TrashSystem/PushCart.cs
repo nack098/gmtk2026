@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using TrashCount.Data;
+using TrashCount.Gameplay.TrashSystem;
 
 namespace TrashCount.Gameplay.TrashSystem
 {
@@ -14,11 +14,14 @@ namespace TrashCount.Gameplay.TrashSystem
         [Header("Weight Settings")]
         [SerializeField] private float itemWeightMultiplier;
 
+        public static PushCart Instance { get; private set; }
+
         public bool IsBeingPushed { get; private set; }
         public PlayerInteraction CurrentPusher { get; private set; }
         public Playstat CurrentPusherStat { get; private set; }
 
         private List<WorldItem> _itemsInCart = new();
+        public List<WorldItem> ItemsInCart => _itemsInCart;
         public float TotalWeight => _itemsInCart.Count * itemWeightMultiplier;
         public int ItemCount => _itemsInCart.Count;
 
@@ -29,6 +32,7 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void Awake()
         {
+            if (Instance == null) Instance = this;
             _rigidbody = GetComponent<Rigidbody>();
         }
 
@@ -96,20 +100,44 @@ namespace TrashCount.Gameplay.TrashSystem
                     }
                 }
 
-                // Position cart in front of player
-                Vector3 targetPosition = CurrentPusher.transform.position + CurrentPusher.transform.forward * 1.5f;
-                targetPosition.y = transform.position.y; // Keep ground height
+                // Position cart following player's designated CartSocket GameObject
+                if (CurrentPusher.CartSocket != null)
+                {
+                    Vector3 targetPos = CurrentPusher.CartSocket.position;
+                    Quaternion targetRot = CurrentPusher.CartSocket.rotation;
 
-                transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * 10f);
-                transform.rotation = Quaternion.Slerp(transform.rotation, CurrentPusher.transform.rotation, Time.deltaTime * 10f);
+                    transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 15f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 15f);
+                }
+                else
+                {
+                    Vector3 targetPosition = CurrentPusher.transform.position + CurrentPusher.transform.forward * 1.5f;
+                    targetPosition.y = transform.position.y;
+
+                    transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * 15f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, CurrentPusher.transform.rotation, Time.deltaTime * 15f);
+                }
             }
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent<WorldItem>(out var worldItem))
+            TryAddItemToCart(other);
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            TryAddItemToCart(other);
+        }
+
+        private void TryAddItemToCart(Collider other)
+        {
+            if (other == null) return;
+
+            if (other.TryGetComponent<WorldItem>(out var worldItem) ||
+                other.GetComponentInParent<WorldItem>() is WorldItem parentItem && (worldItem = parentItem) != null)
             {
-                if (!_itemsInCart.Contains(worldItem) && !worldItem.IsCarried)
+                if (!worldItem.IsCarried && !_itemsInCart.Contains(worldItem))
                 {
                     _itemsInCart.Add(worldItem);
                     worldItem.transform.SetParent(basketContainer);
@@ -120,12 +148,15 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent<WorldItem>(out var worldItem))
+            if (other == null) return;
+
+            if (other.TryGetComponent<WorldItem>(out var worldItem) ||
+                other.GetComponentInParent<WorldItem>() is WorldItem parentItem && (worldItem = parentItem) != null)
             {
                 if (_itemsInCart.Contains(worldItem))
                 {
                     _itemsInCart.Remove(worldItem);
-                    if (worldItem.transform.parent == basketContainer)
+                    if (!worldItem.IsCarried && worldItem.transform.parent == basketContainer)
                     {
                         worldItem.transform.SetParent(null);
                     }

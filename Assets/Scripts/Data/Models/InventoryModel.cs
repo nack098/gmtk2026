@@ -8,11 +8,17 @@ namespace TrashCount.Data.Models
         [UnityEngine.SerializeField] private List<ItemModel> _data = new();
         public uint MaxInventorySize;
         
+        public IReadOnlyList<ItemModel> Items => _data;
         public int Count => _data.Count;
         
         public void Remove(ItemModel itemToRemove)
         {
             _data.Remove(itemToRemove);
+        }
+
+        public void Clear()
+        {
+            _data.Clear();
         }
         
         public void Add(ItemModel model)

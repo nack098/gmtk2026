@@ -5,7 +5,7 @@ namespace TrashCount.Data.Models
     {
         public float TotalSeconds;
 
-        public uint Day => (uint)(TotalSeconds / 86400);
+        public uint Day = 0;
         public uint Hour => (uint)((TotalSeconds % 86400) / 3600);
         public uint Minute => (uint)((TotalSeconds % 3600) / 60);
         public float Second => TotalSeconds % 60;

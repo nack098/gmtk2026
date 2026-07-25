@@ -39,19 +39,52 @@ public class Playstat : MonoBehaviour
     private float _baseMoveSpeed = 2.0f;
     private float _baseSprintSpeed = 5.335f;
 
+    [Header("GameData Integration")]
+    [SerializeField] private GameData gameData;
+
     private void Start()
     {
         controller = GetComponent<ThirdPersonController>();
         hungerSystem = GetComponent<HungerSystem>();
         GetComponent<StarterAssetsInputs>();
 
-        // Initialize runtime stats
-        currentHealthy = MaxHealthy;
-        currentHungry = MaxHungry;
-        currentStamina = MaxStamina;
+        // Sync from GameData if available
+        SyncFromGameData();
+
+        if (currentHealthy <= 0f) currentHealthy = MaxHealthy;
+        if (currentHungry <= 0f) currentHungry = MaxHungry;
+        if (currentStamina <= 0f) currentStamina = MaxStamina;
 
         // Initialize HungerSystem state
         hungerSystem.ChangeState(HungerState.Normal);
+    }
+
+    public void SyncFromGameData()
+    {
+        if (gameData == null && TrashCount.Gameplay.Phases.GamePhaseManager.Instance != null)
+        {
+            gameData = TrashCount.Gameplay.Phases.GamePhaseManager.Instance.Data;
+        }
+
+        if (gameData != null && gameData.PlayerData != null)
+        {
+            currentHealthy = gameData.PlayerData.Healthy;
+            currentHungry = gameData.PlayerData.Hunger;
+        }
+    }
+
+    public void SyncToGameData()
+    {
+        if (gameData == null && TrashCount.Gameplay.Phases.GamePhaseManager.Instance != null)
+        {
+            gameData = TrashCount.Gameplay.Phases.GamePhaseManager.Instance.Data;
+        }
+
+        if (gameData != null && gameData.PlayerData != null)
+        {
+            gameData.PlayerData.Healthy = currentHealthy;
+            gameData.PlayerData.Hunger = currentHungry;
+        }
     }
 
     private void Update()
@@ -131,6 +164,9 @@ public class Playstat : MonoBehaviour
 
         // 6. Apply calculated movement speeds to ThirdPersonController
         ApplySpeedToController();
+
+        // 7. Sync current runtime stats back to GameData
+        SyncToGameData();
     }
 
     private void UpdateHungerState()

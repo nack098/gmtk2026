@@ -8,6 +8,7 @@ namespace TrashCount.Data
         None = 0,
         Apple,
         Orange,
+        bread,
     }
 
     public partial class ItemData
@@ -30,6 +31,8 @@ namespace TrashCount.Data
                     return data.Items.TryGetValue("Apple", out var v_Apple) ? v_Apple : default;
                 case ItemState.Orange:
                     return data.Items.TryGetValue("Orange", out var v_Orange) ? v_Orange : default;
+                case ItemState.bread:
+                    return data.Items.TryGetValue(" bread", out var v_bread) ? v_bread : default;
                 default:
                     return default;
             }

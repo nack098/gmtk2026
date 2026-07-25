@@ -15,7 +15,8 @@ MonoBehaviour:
   Items:
   - key: Apple
     value:
-      SellPrice: 0
+      SellPrice: 2
+      Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900049062527049
       - rid: 7378900049062527050
@@ -23,17 +24,25 @@ MonoBehaviour:
       - rid: 7378900049062527055
   - key: Orange
     value:
-      SellPrice: 0
+      SellPrice: 2
+      Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900049062527058
       - rid: 7378900049062527059
+  - key: ' bread'
+    value:
+      SellPrice: 2
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900071011057924
+      - rid: 7378900071011057926
   references:
     version: 2
     RefIds:
     - rid: 7378900049062527049
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        RestoreAmount: 15
+        RestoreAmount: 10
     - rid: 7378900049062527050
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -54,3 +63,11 @@ MonoBehaviour:
       type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
         WorldPrefab: {fileID: 1306707535233177299, guid: 0df9dfe80888371448bcccbdc9064e3c, type: 3}
+    - rid: 7378900071011057924
+      type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        RestoreAmount: 20
+    - rid: 7378900071011057926
+      type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        BuyPrice: 5

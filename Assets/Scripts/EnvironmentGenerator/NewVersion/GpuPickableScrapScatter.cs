@@ -169,6 +169,24 @@ public class GpuPickableScrapScatter : MonoBehaviour
             }
 
             instance.transform.localScale = Vector3.one * data.scale;
+
+            // Ensure pickable scrap has a Collider for physics and player interaction
+            if (instance.GetComponentInChildren<Collider>() == null)
+            {
+                Renderer rend = instance.GetComponentInChildren<Renderer>();
+                if (rend != null)
+                {
+                    BoxCollider boxCol = instance.AddComponent<BoxCollider>();
+                    boxCol.center = instance.transform.InverseTransformPoint(rend.bounds.center);
+                    boxCol.size = instance.transform.InverseTransformVector(rend.bounds.size);
+                    boxCol.isTrigger = true;
+                }
+                else
+                {
+                    SphereCollider sphereCol = instance.AddComponent<SphereCollider>();
+                    sphereCol.isTrigger = true;
+                }
+            }
         }
 
         Debug.Log($"<color=lime>[GpuPickableScrapScatter]</color> Async WebGPU execution success! Spawned {spawnLimit - 1} pickable GameObjects without main-thread hitching!");

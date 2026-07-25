@@ -1,13 +1,16 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 namespace TrashCount.Data.Models
 {
     [Serializable]
     public class ItemModel
     {
+        public string ItemName = "Item";
         public int SellPrice;
+        public Sprite Itemicon;
         
         [SerializeReference] 
         public List<IItemCapability> capabilities = new();
