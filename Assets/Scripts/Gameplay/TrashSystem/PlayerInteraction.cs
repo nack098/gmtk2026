@@ -14,7 +14,7 @@ namespace TrashCount.Gameplay.TrashSystem
 
         [Header("Carrying Socket Settings")]
         [SerializeField] private Transform holdSocket;
-
+        public Transform CartSocket;
         public IInteractable CurrentInteractable { get; private set; }
         public WorldItem CarriedItem { get; private set; }
         public bool IsCarrying => CarriedItem != null;

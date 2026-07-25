@@ -20,11 +20,17 @@ namespace TrashCount.Gameplay.Phases.UI
         [SerializeField] private Transform buyZoneContainer;
         [SerializeField] private Transform sellZoneContainer;
 
+        [Header("Zone Panels (For Tab Switching)")]
+        [SerializeField] private GameObject buyZonePanel;
+        [SerializeField] private GameObject CartInventoryZonePanel;
+
         [Header("Prefabs")]
         [SerializeField] private UIDragItem dragItemPrefab;
 
         [Header("UI Button References")]
         [SerializeField] private Button completeShoppingButton;
+        [SerializeField] private Button ShopPanelButton;
+        [SerializeField] private Button CartInventoryButton;
 
         [Header("UI Text References")]
         [SerializeField] private TextMeshProUGUI moneyText;
@@ -61,6 +67,16 @@ namespace TrashCount.Gameplay.Phases.UI
             if (completeShoppingButton != null)
             {
                 completeShoppingButton.onClick.AddListener(OnClickCompleteShopping);
+            }
+
+            if (ShopPanelButton != null)
+            {
+                ShopPanelButton.onClick.AddListener(OpenBuyPanel);
+            }
+
+            if (CartInventoryButton != null)
+            {
+                CartInventoryButton.onClick.AddListener(OpenCartInventoryPanel);
             }
         }
 
@@ -185,6 +201,7 @@ namespace TrashCount.Gameplay.Phases.UI
 
                     Debug.Log("[ShoppingPhaseUI] Shopping Panel activated successfully!");
                     PopulateAllZones();
+                    OpenBuyPanel(); // Open Shop (Buy Zone) tab by default
                 }
                 else
                 {
@@ -196,6 +213,46 @@ namespace TrashCount.Gameplay.Phases.UI
                 _currentShoppingPhase = null;
                 if (shoppingPanel != null) shoppingPanel.SetActive(false);
             }
+        }
+
+        public void OpenBuyPanel()
+        {
+            if (buyZonePanel != null) buyZonePanel.SetActive(true);
+            if (CartInventoryZonePanel != null) CartInventoryZonePanel.SetActive(false);
+
+            // Fallback: If containers' parent GameObjects are used directly
+            if (buyZonePanel == null && buyZoneContainer != null)
+            {
+                var parentObj = buyZoneContainer.parent != null ? buyZoneContainer.parent.gameObject : buyZoneContainer.gameObject;
+                parentObj.SetActive(true);
+            }
+            if (CartInventoryZonePanel == null && inventoryZoneContainer != null)
+            {
+                var parentObj = inventoryZoneContainer.parent != null ? inventoryZoneContainer.parent.gameObject : inventoryZoneContainer.gameObject;
+                parentObj.SetActive(false);
+            }
+
+            SetStatusMessage("Switched to Shop.");
+        }
+
+        public void OpenCartInventoryPanel()
+        {
+            if (CartInventoryZonePanel != null) CartInventoryZonePanel.SetActive(true);
+            if (buyZonePanel != null) buyZonePanel.SetActive(false);
+
+            // Fallback: If containers' parent GameObjects are used directly
+            if (CartInventoryZonePanel == null && inventoryZoneContainer != null)
+            {
+                var parentObj = inventoryZoneContainer.parent != null ? inventoryZoneContainer.parent.gameObject : inventoryZoneContainer.gameObject;
+                parentObj.SetActive(true);
+            }
+            if (buyZonePanel == null && buyZoneContainer != null)
+            {
+                var parentObj = buyZoneContainer.parent != null ? buyZoneContainer.parent.gameObject : buyZoneContainer.gameObject;
+                parentObj.SetActive(false);
+            }
+
+            SetStatusMessage("Switched to CartInventory.");
         }
 
         public void PopulateAllZones()
@@ -475,6 +532,16 @@ namespace TrashCount.Gameplay.Phases.UI
 
             _currentShoppingPhase.CompleteShoppingPhase();
         }
+        public void OnClickShopPanelButton()
+        {
+            OpenBuyPanel();
+        }
+        
+        public void OnClickInventoryPanelButton()
+        {
+            OpenCartInventoryPanel();
+        }
+        
 
         private void SetStatusMessage(string message)
         {

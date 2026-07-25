@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using TrashCount.Data;
+using TrashCount.Gameplay.TrashSystem;
 
 namespace TrashCount.Gameplay.TrashSystem
 {
@@ -100,12 +100,23 @@ namespace TrashCount.Gameplay.TrashSystem
                     }
                 }
 
-                // Position cart in front of player
-                Vector3 targetPosition = CurrentPusher.transform.position + CurrentPusher.transform.forward * 1.5f;
-                targetPosition.y = transform.position.y; // Keep ground height
+                // Position cart following player's designated CartSocket GameObject
+                if (CurrentPusher.CartSocket != null)
+                {
+                    Vector3 targetPos = CurrentPusher.CartSocket.position;
+                    Quaternion targetRot = CurrentPusher.CartSocket.rotation;
 
-                transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * 10f);
-                transform.rotation = Quaternion.Slerp(transform.rotation, CurrentPusher.transform.rotation, Time.deltaTime * 10f);
+                    transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 15f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 15f);
+                }
+                else
+                {
+                    Vector3 targetPosition = CurrentPusher.transform.position + CurrentPusher.transform.forward * 1.5f;
+                    targetPosition.y = transform.position.y;
+
+                    transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * 15f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, CurrentPusher.transform.rotation, Time.deltaTime * 15f);
+                }
             }
         }
 
