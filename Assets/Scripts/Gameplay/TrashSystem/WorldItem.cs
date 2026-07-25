@@ -71,6 +71,7 @@ namespace TrashCount.Gameplay.TrashSystem
             if (_collider != null) _collider.enabled = true;
             if (_rigidbody != null)
             {
+                _rigidbody.useGravity = true;
                 _rigidbody.isKinematic = false;
             }
         }

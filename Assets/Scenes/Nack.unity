@@ -898,7 +898,7 @@ MonoBehaviour:
   _heightMapToMesh: {fileID: 1049395788}
   _grassGenerator: {fileID: 1049395793}
   _junkPopulator: {fileID: 1049395792}
-  _junkColliderPool: {fileID: 0}
+  _junkColliderPool: {fileID: 1049395795}
   _scrapPopulator: {fileID: 1049395794}
 --- !u!114 &1049395792
 MonoBehaviour:
@@ -984,6 +984,7 @@ MonoBehaviour:
   _generator: {fileID: 1049395784}
   _visualizer: {fileID: 1049395788}
   _pickableCS: {fileID: 7200000, guid: 0e708e3e1f373ad4fb4cc30322dbf35d, type: 3}
+  _itemData: {fileID: 0}
   _trashPrefabs:
   - {fileID: 8903300326846727720, guid: cb10242503517114e9e7000720dad421, type: 3}
   - {fileID: 242888461646047245, guid: a6135560cbb78434d9174db1b7db995a, type: 3}
@@ -1009,7 +1010,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GpuJunkyardColliderPool
   _populator: {fileID: 1049395792}
-  _targetPlayer: {fileID: 0}
+  _targetPlayer: {fileID: 1519730808}
   _proximityRadius: 25
   _maxActiveColliders: 150
   _updateInterval: 0.1
@@ -1138,6 +1139,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1519730808 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2639667466430773696, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+  m_PrefabInstance: {fileID: 446890380}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1775427044
 GameObject:
   m_ObjectHideFlags: 0

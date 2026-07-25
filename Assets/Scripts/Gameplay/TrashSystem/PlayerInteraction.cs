@@ -24,10 +24,12 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private List<Collider> _candidatesInTrigger = new List<Collider>();
         private Playstat _playStat;
+        private StarterAssets.StarterAssetsInputs _inputs;
 
         private void Awake()
         {
             _playStat = GetComponent<Playstat>();
+            _inputs = GetComponent<StarterAssets.StarterAssetsInputs>();
 
             if (holdSocket == null)
             {
@@ -35,6 +37,15 @@ namespace TrashCount.Gameplay.TrashSystem
                 socketObj.transform.SetParent(transform);
                 socketObj.transform.localPosition = new Vector3(0f, 1.2f, 0.8f);
                 holdSocket = socketObj.transform;
+            }
+
+            if (CartSocket == null)
+            {
+                GameObject socketObj = new GameObject("CartSocket");
+                socketObj.transform.SetParent(transform);
+                socketObj.transform.localPosition = new Vector3(0f, 0.8f, 1.2f);
+                socketObj.transform.localRotation = Quaternion.identity;
+                CartSocket = socketObj.transform;
             }
         }
 
@@ -90,6 +101,9 @@ namespace TrashCount.Gameplay.TrashSystem
                 }
             }
 
+            // Always update interactable detection
+            DetectInteractable();
+
             if (IsPushingCart)
             {
                 HandlePushingCartInput();
@@ -100,24 +114,34 @@ namespace TrashCount.Gameplay.TrashSystem
             }
             else
             {
-                DetectInteractable();
                 HandleInput();
             }
         }
+
+        private float _lastDropTime;
 
         private void DetectInteractable()
         {
             IInteractable closestInteractable = null;
             float minDistance = float.MaxValue;
 
-            for (int i = _candidatesInTrigger.Count - 1; i >= 0; i--)
+            // Dynamic Physics OverlapSphere check (Guarantees detection of dropped or newly enabled items)
+            Vector3 searchCenter = transform.position + transform.forward * 0.5f + Vector3.up * 0.8f;
+            Collider[] overlapColliders = Physics.OverlapSphere(searchCenter, 2.5f, interactableMask, QueryTriggerInteraction.Collide);
+
+            List<Collider> allCandidates = new List<Collider>(_candidatesInTrigger);
+            foreach (var col in overlapColliders)
             {
-                var col = _candidatesInTrigger[i];
-                if (col == null || !col.enabled || !col.gameObject.activeInHierarchy)
+                if (col != null && col.gameObject != gameObject && !allCandidates.Contains(col))
                 {
-                    _candidatesInTrigger.RemoveAt(i);
-                    continue;
+                    allCandidates.Add(col);
                 }
+            }
+
+            for (int i = allCandidates.Count - 1; i >= 0; i--)
+            {
+                var col = allCandidates[i];
+                if (col == null || !col.enabled || !col.gameObject.activeInHierarchy) continue;
 
                 if (col.TryGetComponent<IInteractable>(out var interactable) ||
                     col.GetComponentInParent<IInteractable>() is IInteractable parentInteractable && (interactable = parentInteractable) != null)
@@ -139,6 +163,8 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void HandleInput()
         {
+            if (Time.time < _lastDropTime + 0.2f) return;
+
             if (CurrentInteractable != null && IsInteractKeyPressed())
             {
                 CurrentInteractable.Interact(gameObject);
@@ -196,9 +222,12 @@ namespace TrashCount.Gameplay.TrashSystem
             Vector3 dropPos = transform.position + transform.forward * 0.8f;
             dropPos.y = holdSocket != null ? holdSocket.position.y : transform.position.y + 1.2f;
 
-            CarriedItem.DropToGround(dropPos);
-
+            WorldItem itemToDrop = CarriedItem;
             CarriedItem = null;
+            _lastDropTime = Time.time;
+
+            itemToDrop.DropToGround(dropPos);
+
             if (_playStat != null)
             {
                 _playStat.IsCarryingItem = false;
@@ -225,53 +254,57 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private bool IsInteractKeyPressed()
         {
+            if (_inputs != null && _inputs.interact)
+            {
+                _inputs.interact = false;
+                return true;
+            }
 #if ENABLE_INPUT_SYSTEM
-            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.eKey.wasPressedThisFrame)
+            if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
             {
                 return true;
             }
-            return false;
-#else
-            return Input.GetKeyDown(interactKey);
 #endif
+            return false;
         }
 
         private bool IsConsumeKeyPressed()
         {
+            if (_inputs != null && _inputs.consume)
+            {
+                _inputs.consume = false;
+                return true;
+            }
 #if ENABLE_INPUT_SYSTEM
-            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.fKey.wasPressedThisFrame)
+            if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame)
             {
                 return true;
             }
-            return false;
-#else
-            return Input.GetKeyDown(consumeKey);
 #endif
+            return false;
         }
 
         // New Input System Action Message Receivers
+#if ENABLE_INPUT_SYSTEM
+        public void OnInteract(UnityEngine.InputSystem.InputValue value)
+        {
+            if (_inputs != null) _inputs.interact = value.isPressed;
+        }
+
+        public void OnConsume(UnityEngine.InputSystem.InputValue value)
+        {
+            if (_inputs != null) _inputs.consume = value.isPressed;
+        }
+#else
         public void OnInteract()
         {
-            if (IsPushingCart)
-            {
-                ReleaseCart();
-            }
-            else if (IsCarrying)
-            {
-                DropCarriedItem();
-            }
-            else if (CurrentInteractable != null)
-            {
-                CurrentInteractable.Interact(gameObject);
-            }
+            if (_inputs != null) _inputs.interact = true;
         }
 
         public void OnConsume()
         {
-            if (IsCarrying)
-            {
-                ConsumeCarriedItem();
-            }
+            if (_inputs != null) _inputs.consume = true;
         }
+#endif
     }
 }
