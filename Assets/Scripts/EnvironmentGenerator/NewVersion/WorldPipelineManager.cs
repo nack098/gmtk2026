@@ -8,6 +8,7 @@ public class WorldPipelineManager : MonoBehaviour
     [SerializeField] private HeightMapToMesh _heightMapToMesh;
     [SerializeField] private GrassGeneratorBatched _grassGenerator; // Integrated here!
     [SerializeField] private GpuJunkyardPopulator _junkPopulator;
+    [SerializeField] private GpuJunkyardColliderPool _junkColliderPool; // Physics Proximity Pool!
     [SerializeField] private GpuPickableScrapScatter _scrapPopulator; // Integrated here!
 
     private IEnumerator Start()

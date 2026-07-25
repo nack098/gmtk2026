@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 #endif
@@ -131,6 +131,10 @@ namespace StarterAssets
             if (_mainCamera == null)
             {
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                if (_mainCamera == null && Camera.main != null)
+                {
+                    _mainCamera = Camera.main.gameObject;
+                }
             }
         }
 
@@ -257,8 +261,15 @@ namespace StarterAssets
             // if there is a move input rotate player when the player is moving
             if (_input.move != Vector2.zero)
             {
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
-                                  _mainCamera.transform.eulerAngles.y;
+                if (_mainCamera == null)
+                {
+                    _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                    if (_mainCamera == null && Camera.main != null)
+                        _mainCamera = Camera.main.gameObject;
+                }
+
+                float cameraYaw = _mainCamera != null ? _mainCamera.transform.eulerAngles.y : 0.0f;
+                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + cameraYaw;
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
                     RotationSmoothTime);
 

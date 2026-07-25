@@ -2037,11 +2037,11 @@ MonoBehaviour:
   buyZoneContainer: {fileID: 0}
   sellZoneContainer: {fileID: 0}
   buyZonePanel: {fileID: 0}
-  inventoryZonePanel: {fileID: 0}
+  CartInventoryZonePanel: {fileID: 0}
   dragItemPrefab: {fileID: 7776779114426679049, guid: 743f359737cb3b448b13de3c1eff23f1, type: 3}
   completeShoppingButton: {fileID: 0}
   ShopPanelButton: {fileID: 0}
-  inventoryPanelButton: {fileID: 0}
+  CartInventoryButton: {fileID: 0}
   moneyText: {fileID: 0}
   playerHealthyText: {fileID: 0}
   playerHungerText: {fileID: 0}
@@ -2082,19 +2082,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82289275fb529ed40a331cb0d00be9fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashScrapScatter
-  _generator: {fileID: 970519796}
-  _visualizer: {fileID: 970519793}
-  _trashPrefabs:
-  - {fileID: 8903300326846727720, guid: cb10242503517114e9e7000720dad421, type: 3}
-  - {fileID: 4702471856202731620, guid: 7bb71a78bbcacfe468884439e28f0399, type: 3}
-  - {fileID: 4380362438394327887, guid: b6ca140754d3d9542976822d99a7ec18, type: 3}
-  _totalScrapCount: 150
-  _minHeightThreshold: 0.08
-  _minPropDistance: 1.2
-  _scaleRange: {x: 0.8, y: 1}
-  _alignToSurfaceNormal: 1
-  _maxNormalTiltAngle: 25
-  _scrapContainer: {fileID: 1555965705}
 --- !u!114 &970519792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2107,17 +2094,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a848ac63088954c4fa94aa3b8c05bd90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JunkyardTerrainSurfaceModifier
-  _terrainGenerator: {fileID: 970519796}
-  _visualizer: {fileID: 970519793}
-  _terrainScrapPrefabs:
-  - {fileID: 8903300326846727720, guid: cb10242503517114e9e7000720dad421, type: 3}
-  - {fileID: 4380362438394327887, guid: b6ca140754d3d9542976822d99a7ec18, type: 3}
-  - {fileID: 242888461646047245, guid: a6135560cbb78434d9174db1b7db995a, type: 3}
-  _scrapDensityGrid: 70
-  _basePoissonLambda: 8
-  _positionJitter: 3
-  _scaleRange: {x: 0.5, y: 1}
-  _terrainScrapContainer: {fileID: 1663808320}
 --- !u!114 &970519793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2130,13 +2106,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 416acc0e97b5f6343842c070dd5d8acb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HeightMapVisualizer
-  _generator: {fileID: 970519796}
-  _heightScale: 10
-  _meshSize: 100
-  _terrainMaterial: {fileID: 2100000, guid: 71942363c5608a64bb62421349d39c9c, type: 2}
-  _uvTiling: 5
-  _showWireframe: 1
-  _wireframeColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &970519794
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2206,18 +2175,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 899a746cbd0b9324c8c779ba1292f174, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGenerator
-  _baseStartRes: 16
-  _targetRes: 128
-  _pileAmount: 7
-  _minSeedDistance: 3.5
-  _caIterations: 2
-  _maxInfluenceRadius: 24
-  _pileSteepness: 1.8
-  _warpFrequency: 0.02
-  _warpAmplitude: 14
-  _debrisFrequency: 0.18
-  _debrisStrength: 0.18
-  _image: {fileID: 0}
 --- !u!4 &970519797
 Transform:
   m_ObjectHideFlags: 0

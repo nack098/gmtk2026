@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [System.Serializable]
 public struct ScrapTypeConfig
@@ -36,6 +37,10 @@ public class GpuJunkyardPopulator : MonoBehaviour
 
     [Header("Scrap Mesh Variations")]
     [SerializeField] private ScrapTypeConfig[] _scrapTypes;
+
+    public ScrapTypeConfig[] ScrapTypes => _scrapTypes;
+    public ScrapInstanceData[] CachedInstances { get; private set; }
+    public bool IsDataReady { get; private set; }
 
     [Header("Scattering Parameters")]
     [SerializeField] private int _scrapDensityGrid = 80;
@@ -176,6 +181,20 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _scatterComputeShader.Dispatch(_scatterKernel, scatterThreadGroups, scatterThreadGroups, 1);
 
         _isInitialized = true;
+        IsDataReady = false;
+
+        AsyncGPUReadback.Request(_allInstancesBuffer, (request) =>
+        {
+            if (request.hasError || _allInstancesBuffer == null) return;
+            var data = request.GetData<ScrapInstanceData>();
+            CachedInstances = data.ToArray();
+            IsDataReady = true;
+
+            if (TryGetComponent(out GpuJunkyardColliderPool pool))
+            {
+                pool.UpdateProximityColliders();
+            }
+        });
     }
 
     private void Update()
@@ -236,5 +255,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _globalArgsBuffer = null;
         _counterBuffer = null;
         _isInitialized = false;
+        IsDataReady = false;
+        CachedInstances = null;
     }
 }

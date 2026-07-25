@@ -56,6 +56,7 @@ public class HeightMapToMesh : MonoBehaviour
         if (_mode == DisplacementMode.GPU_ShaderDisplacement)
         {
             GenerateGPUMesh();
+            GeneratePhysicsColliderFromGPU();
         }
         else
         {
@@ -112,6 +113,53 @@ public class HeightMapToMesh : MonoBehaviour
 
             var heightData = request.GetData<float>();
             BuildDisplacedCPUMesh(heightData, rt.width, rt.height);
+        });
+    }
+
+    public void GeneratePhysicsColliderFromGPU()
+    {
+        if (_generator == null || _generator.FinalHeightMapRT == null) return;
+
+        RenderTexture rt = _generator.FinalHeightMapRT;
+        AsyncGPUReadback.Request(rt, 0, TextureFormat.RFloat, (AsyncGPUReadbackRequest request) =>
+        {
+            if (request.hasError)
+            {
+                Debug.LogError("[HeightMapToMesh] Physics Readback failed!");
+                return;
+            }
+
+            var heightData = request.GetData<float>();
+            Mesh collisionMesh = BuildDisplacedMeshOnly(heightData, rt.width, rt.height);
+
+            if (!TryGetComponent(out MeshCollider collider))
+            {
+                collider = gameObject.AddComponent<MeshCollider>();
+            }
+            collider.sharedMesh = collisionMesh;
+
+            // Ensure player is snapped onto terrain surface if stuck below terrain mesh
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                Ray ray = new Ray(player.transform.position + Vector3.up * 200f, Vector3.down);
+                if (collider.Raycast(ray, out RaycastHit hit, 400f))
+                {
+                    if (player.transform.position.y < hit.point.y + 0.1f)
+                    {
+                        if (player.TryGetComponent(out CharacterController cc))
+                        {
+                            cc.enabled = false;
+                            player.transform.position = hit.point + Vector3.up * 0.5f;
+                            cc.enabled = true;
+                        }
+                        else
+                        {
+                            player.transform.position = hit.point + Vector3.up * 0.5f;
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -176,10 +224,9 @@ public class HeightMapToMesh : MonoBehaviour
         mf.sharedMesh = _generatedMesh;
     }
 
-    private void BuildDisplacedCPUMesh(Unity.Collections.NativeArray<float> heightData, int resX, int resY)
+    private Mesh BuildDisplacedMeshOnly(Unity.Collections.NativeArray<float> heightData, int resX, int resY)
     {
-        MeshFilter mf = GetComponent<MeshFilter>();
-        _generatedMesh = new Mesh { name = "TerrainGrid_CPU_Displaced" };
+        Mesh mesh = new Mesh { name = "TerrainGrid_Displaced_Physics" };
 
         Vector3[] vertices = new Vector3[resX * resY];
         Vector2[] uvs = new Vector2[resX * resY];
@@ -220,19 +267,27 @@ public class HeightMapToMesh : MonoBehaviour
             }
         }
 
-        _generatedMesh.vertices = vertices;
-        _generatedMesh.uv = uvs;
-        _generatedMesh.triangles = triangles;
-        _generatedMesh.RecalculateNormals();
-        _generatedMesh.RecalculateTangents();
-        _generatedMesh.RecalculateBounds();
+        mesh.vertices = vertices;
+        mesh.uv = uvs;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        mesh.RecalculateBounds();
 
+        return mesh;
+    }
+
+    private void BuildDisplacedCPUMesh(Unity.Collections.NativeArray<float> heightData, int resX, int resY)
+    {
+        MeshFilter mf = GetComponent<MeshFilter>();
+        _generatedMesh = BuildDisplacedMeshOnly(heightData, resX, resY);
         mf.sharedMesh = _generatedMesh;
 
-        if (TryGetComponent(out MeshCollider collider))
+        if (!TryGetComponent(out MeshCollider collider))
         {
-            collider.sharedMesh = _generatedMesh;
+            collider = gameObject.AddComponent<MeshCollider>();
         }
+        collider.sharedMesh = _generatedMesh;
     }
 
     private void OnDrawGizmosSelected()

@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Scenes/ZenGameScene.unity
+    path: Assets/Scenes/ZenShopScene.unity
     guid: 3e3a628fed0773748a0212c5f1a062a1
   - enabled: 1
     path: Assets/Scenes/Nack.unity
