@@ -19,30 +19,56 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _AnimatedFogIntensity
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _LensDirtTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 1.76, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BloomIntensity: 0.6
-    - _BloomThreshold: 0.19
-    - _ColorSigma: 0.33
-    - _Contrast: 0.99
-    - _DepthSigma: 0.0395
-    - _Exposure: 0.1
-    - _Saturation: 0.262
-    - _SpatialSigma: 1.69
-    - _VignetteIntensity: 1.59
-    - _VignetteSmoothness: 0.403
+    - _AOBias: 0.0384
+    - _AOIntensity: 1.19
+    - _AORadius: 2.42
+    - _AirDustDensity: 0.0003
+    - _AirDustNoiseScale: 0.278
+    - _AirDustStartDistance: 34.5
+    - _AnimatedFogIntensity: 0.93
+    - _AnimatedFogScale: 2.1
+    - _BloomIntensity: 0.58
+    - _BloomThreshold: 0.33
+    - _ColorSigma: 0.378
+    - _Contrast: 1.007
+    - _DepthSigma: 0.058
+    - _Exposure: 0.07
+    - _FilmGrainIntensity: 0.017
+    - _JitterIntensity: 0.0009
+    - _JitterSpeed: 2
+    - _LensDirtIntensity: 1.79
+    - _LensFogIntensity: 0.209
+    - _RadialBlurStrength: 0.0087
+    - _SSSIntensity: 0.35
+    - _SSSRadius: 6.32
+    - _Saturation: 0.291
+    - _ScanlineCount: 400
+    - _ScanlineIntensity: 0.017
+    - _SpatialSigma: 2.21
+    - _VignetteIntensity: 1.47
+    - _VignetteSmoothness: 0.47
     m_Colors:
+    - _AirDustColor: {r: 0.3962264, g: 0.3962264, b: 0.3962264, a: 1}
+    - _AnimatedFogColor: {r: 0.46502313, g: 0.4682128, b: 0.4716981, a: 1}
+    - _AnimatedFogSpeed: {r: 0.25, g: 0.03, b: 0, a: 0}
     - _ColorTint: {r: 0.48593807, g: 0.5028836, b: 0.5283019, a: 1}
     - _Highlights: {r: 0.9103774, g: 1, b: 0.9541096, a: 1}
     - _Midtones: {r: 0.9009434, g: 1, b: 0.9934867, a: 1}
+    - _SSSColor: {r: 0.5660378, g: 0.46814266, b: 0.28568888, a: 1}
     - _Shadows: {r: 0.9778842, g: 0.9764151, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
