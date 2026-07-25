@@ -1,0 +1,171 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> _Result;
+
+// Camera & Screen Uniforms
+float4x4 _InvProjectionMatrix;
+float4x4 _InvViewMatrix;
+float3 _WorldSpaceCameraPos;
+
+// Sky & Sun
+float3 _SunDir;
+float3 _SunColor;
+float3 _SkyColor;
+
+// Cloud Volume Bounds
+float3 _BoundsMin;
+float3 _BoundsMax;
+
+// Cloud Density & Noise Controls
+float _CloudScale;
+float _CloudThreshold;
+float _CloudDensityMultiplier;
+int _MaxSteps;
+int _LightSteps;
+
+// Simple 3D Noise approximation in HLSL
+float hash31(float3 p)
+{
+    p = frac(p * float3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yzx + 33.33);
+    return frac((p.x + p.y) * p.z);
+}
+
+float noise3D(float3 p)
+{
+    float3 i = floor(p);
+    float3 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    return lerp(
+        lerp(lerp(hash31(i + float3(0,0,0)), hash31(i + float3(1,0,0)), f.x),
+             lerp(hash31(i + float3(0,1,0)), hash31(i + float3(1,1,0)), f.x), f.y),
+        lerp(lerp(hash31(i + float3(0,0,1)), hash31(i + float3(1,0,1)), f.x),
+             lerp(hash31(i + float3(0,1,1)), hash31(i + float3(1,1,1)), f.x), f.y),
+        f.z);
+}
+
+float fbm3D(float3 p)
+{
+    float val = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 4; i++)
+    {
+        val += amp * noise3D(p);
+        p *= 2.03;
+        amp *= 0.5;
+    }
+    return val;
+}
+
+// Ray-AABB (Axis-Aligned Bounding Box) Intersection
+bool RayBoxIntersection(float3 rayOrigin, float3 rayDir, float3 boxMin, float3 boxMax, out float tNear, out float tFar)
+{
+    float3 invDir = 1.0 / (rayDir + 0.00001); // Prevent div-by-zero
+    float3 t0 = (boxMin - rayOrigin) * invDir;
+    float3 t1 = (boxMax - rayOrigin) * invDir;
+
+    float3 tmin = min(t0, t1);
+    float3 tmax = max(t0, t1);
+
+    tNear = max(max(tmin.x, tmin.y), tmin.z);
+    tFar = min(min(tmax.x, tmax.y), tmax.z);
+
+    return tFar > max(tNear, 0.0);
+}
+
+// Henyey-Greenstein Phase Function for Silver Lining sunlight glow
+float HenyeyGreenstein(float g, float costheta)
+{
+    float g2 = g * g;
+    return (1.0 - g2) / (4.0 * 3.14159265 * pow(1.0 + g2 - 2.0 * g * costheta, 1.5));
+}
+
+// Sample Density
+float SampleCloudDensity(float3 pos)
+{
+    // Height gradient (denser in the middle, softer top and bottom)
+    float height = (pos.y - _BoundsMin.y) / (_BoundsMax.y - _BoundsMin.y);
+    float heightMask = smoothstep(0.0, 0.2, height) * smoothstep(1.0, 0.7, height);
+
+    float noise = fbm3D(pos * _CloudScale);
+    float density = max(0.0, noise - _CloudThreshold) * _CloudDensityMultiplier;
+
+    return density * heightMask;
+}
+
+// Light March towards Sun (Beer's Law)
+float LightMarch(float3 pos)
+{
+    float3 dirToSun = normalize(_SunDir);
+    float stepSize = (_BoundsMax.y - _BoundsMin.y) / (float)_LightSteps;
+    float totalDensity = 0.0;
+
+    for (int i = 0; i < _LightSteps; i++)
+    {
+        pos += dirToSun * stepSize;
+        totalDensity += SampleCloudDensity(pos) * stepSize;
+    }
+
+    // Beer's Law (Transmittance = exp(-density * absorption))
+    return exp(-totalDensity * 0.75);
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    _Result.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    // Convert Pixel UVs to Screen Ray
+    float2 uv = (id.xy + 0.5) / float2(width, height);
+    float2 clipPos = uv * 2.0 - 1.0;
+
+    float4 viewPos = mul(_InvProjectionMatrix, float4(clipPos, 0.0, 1.0));
+    viewPos /= viewPos.w;
+    float3 rayDir = normalize(mul(_InvViewMatrix, float4(viewPos.xyz, 0.0)).xyz);
+
+    float3 rayOrigin = _WorldSpaceCameraPos;
+
+    // Check ray intersection with cloud box
+    float tNear, tFar;
+    if (!RayBoxIntersection(rayOrigin, rayDir, _BoundsMin, _BoundsMax, tNear, tFar))
+    {
+        _Result[id.xy] = float4(_SkyColor, 1.0); // Missed box: render sky
+        return;
+    }
+
+    // March through cloud layer
+    float stepSize = (tFar - tNear) / (float)_MaxSteps;
+    float3 currentPos = rayOrigin + rayDir * (tNear + stepSize * 0.5);
+
+    float transmittance = 1.0;
+    float3 lightEnergy = float3(0.0, 0.0, 0.0);
+    float cosTheta = dot(rayDir, normalize(_SunDir));
+    float phase = HenyeyGreenstein(0.6, cosTheta);
+
+    for (int i = 0; i < _MaxSteps; i++)
+    {
+        float density = SampleCloudDensity(currentPos);
+
+        if (density > 0.001)
+        {
+            float lightTransmittance = LightMarch(currentPos);
+            float shadowTransmittance = exp(-density * stepSize * 0.5);
+
+            // Accumulate light energy reaching eye
+            lightEnergy += transmittance * density * stepSize * lightTransmittance * _SunColor * phase;
+            transmittance *= shadowTransmittance;
+
+            // Early exit if completely opaque
+            if (transmittance < 0.01) break;
+        }
+
+        currentPos += rayDir * stepSize;
+    }
+
+    // Composite cloud over sky color
+    float3 finalColor = _SkyColor * transmittance + lightEnergy;
+    _Result[id.xy] = float4(finalColor, 1.0);
+}

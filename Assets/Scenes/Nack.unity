@@ -166,6 +166,7 @@ GameObject:
   - component: {fileID: 184932237}
   - component: {fileID: 184932236}
   - component: {fileID: 184932239}
+  - component: {fileID: 184932240}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -323,6 +324,29 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!114 &184932240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184932234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b5c450e5cd6f3b43bb402f4fe8a14e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VolumetricCloudRenderer
+  _cloudCS: {fileID: 7200000, guid: aa151ffc7ed07304b8742b343a1f2b3c, type: 3}
+  _boxCenter: {x: 0, y: 250, z: 0}
+  _boxSize: {x: 1000, y: 80, z: 1000}
+  _sunLight: {fileID: 410087041}
+  _sunColor: {r: 1, g: 1, b: 1, a: 1}
+  _skyColor: {r: 0.6226415, g: 0.6226415, b: 0.6226415, a: 1}
+  _cloudScale: 0.012
+  _cloudThreshold: 0.42
+  _cloudDensityMultiplier: 3.5
+  _maxSteps: 64
+  _lightSteps: 6
 --- !u!1001 &350488398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -400,7 +424,7 @@ GameObject:
   - component: {fileID: 410087040}
   - component: {fileID: 410087042}
   m_Layer: 0
-  m_Name: Main Camera
+  m_Name: Directional Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -570,6 +594,18 @@ PrefabInstance:
     - target: {fileID: 3452619616725148538, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: m_Name
       value: Muryotaisu
+      objectReference: {fileID: 0}
+    - target: {fileID: 5088225868652305780, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_UseGravity
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5088225868652305780, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_IsKinematic
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5088225868652305780, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_ImplicitTensor
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
