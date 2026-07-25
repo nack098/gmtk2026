@@ -7,6 +7,7 @@ public class GpuJunkyardColliderPool : MonoBehaviour
     [Header("References")]
     [SerializeField] private GpuJunkyardPopulator _populator;
     [SerializeField] private Transform _targetPlayer;
+    [SerializeField] private Transform _targetCart;
 
     [Header("Proximity Settings")]
     [SerializeField, Range(5f, 100f)] private float _proximityRadius = 25.0f;
@@ -59,15 +60,28 @@ public class GpuJunkyardColliderPool : MonoBehaviour
                 return;
         }
 
+        if (_targetCart == null)
+        {
+            if (TrashCount.Gameplay.TrashSystem.PushCart.Instance != null)
+            {
+                _targetCart = TrashCount.Gameplay.TrashSystem.PushCart.Instance.transform;
+            }
+            else
+            {
+                GameObject cartObj = GameObject.Find("Cart");
+                if (cartObj != null) _targetCart = cartObj.transform;
+            }
+        }
+
         var instances = _populator.CachedInstances;
         var scrapTypes = _populator.ScrapTypes;
         if (instances == null || instances.Length == 0 || scrapTypes == null || scrapTypes.Length == 0) return;
 
         EnsurePoolContainer();
         Vector3 playerPos = _targetPlayer.position;
-        float radiusSq = _proximityRadius * _proximityRadius;
-        float safetyRadiusSq = 1.5f * 1.5f; // 1.5m clearance to prevent trapping player inside junk box colliders
+        Vector3 cartPos = _targetCart != null ? _targetCart.position : new Vector3(99999f, 99999f, 99999f);
 
+        float radiusSq = _proximityRadius * _proximityRadius;
         int poolIndex = 0;
 
         for (int i = 0; i < instances.Length; i++)
@@ -75,8 +89,11 @@ public class GpuJunkyardColliderPool : MonoBehaviour
             ref var inst = ref instances[i];
             if (inst.scale.x <= 0.001f) continue; // Invalid/empty instance
 
-            float distSq = (inst.position - playerPos).sqrMagnitude;
-            if (distSq <= radiusSq && distSq >= safetyRadiusSq)
+            float distPlayerSq = (inst.position - playerPos).sqrMagnitude;
+            float distCartSq = (_targetCart != null) ? (inst.position - cartPos).sqrMagnitude : float.MaxValue;
+
+            // Generate junk colliders within proximity of EITHER Player OR PushCart!
+            if (distPlayerSq <= radiusSq || distCartSq <= radiusSq)
             {
                 if (poolIndex >= _maxActiveColliders) break;
 

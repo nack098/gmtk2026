@@ -2,6 +2,9 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
+using TrashCount.Data;
+using TrashCount.Data.Models;
+using TrashCount.Gameplay.TrashSystem;
 
 public class GpuPickableScrapScatter : MonoBehaviour
 {
@@ -20,7 +23,11 @@ public class GpuPickableScrapScatter : MonoBehaviour
     [SerializeField] private HeightMapToMesh _visualizer;
     [SerializeField] private ComputeShader _pickableCS;
 
-    [Header("Pickable Prefabs Library")]
+    [Header("Item Data Library (Optional)")]
+    [Tooltip("If assigned, pickable prefabs will be automatically fetched from ItemData's PickableCapability!")]
+    [SerializeField] private TrashCount.Data.ItemData _itemData;
+
+    [Header("Pickable Prefabs Library (Fallback)")]
     [SerializeField] private GameObject[] _trashPrefabs;
 
     [Header("Density & Distribution")]
@@ -43,6 +50,32 @@ public class GpuPickableScrapScatter : MonoBehaviour
         if (_visualizer == null) _visualizer = GetComponent<HeightMapToMesh>();
     }
 
+    public GameObject[] GetActiveTrashPrefabs()
+    {
+        if (_itemData != null && _itemData.Items != null && _itemData.Items.Count > 0)
+        {
+            var prefabsFromData = new System.Collections.Generic.List<GameObject>();
+            foreach (var kvp in _itemData.Items)
+            {
+                var model = kvp.Value;
+                if (model != null && model.TryGetCapability<TrashCount.Data.Models.PickableCapability>(out var pickable) && pickable.WorldPrefab != null)
+                {
+                    if (!prefabsFromData.Contains(pickable.WorldPrefab))
+                    {
+                        prefabsFromData.Add(pickable.WorldPrefab);
+                    }
+                }
+            }
+
+            if (prefabsFromData.Count > 0)
+            {
+                return prefabsFromData.ToArray();
+            }
+        }
+
+        return _trashPrefabs;
+    }
+
     [ContextMenu("Scatter Pickables via GPU")]
     public void ScatterPropsGPU()
     {
@@ -52,9 +85,10 @@ public class GpuPickableScrapScatter : MonoBehaviour
             return;
         }
 
-        if (_trashPrefabs == null || _trashPrefabs.Length == 0)
+        GameObject[] activePrefabs = GetActiveTrashPrefabs();
+        if (activePrefabs == null || activePrefabs.Length == 0)
         {
-            Debug.LogWarning("[GpuPickableScrapScatter] No trash prefabs assigned!");
+            Debug.LogWarning("[GpuPickableScrapScatter] No trash prefabs assigned in ItemData or Inspector!");
             return;
         }
 
@@ -95,7 +129,7 @@ public class GpuPickableScrapScatter : MonoBehaviour
         _pickableCS.SetVector("_ScaleRange", _scaleRange);
         _pickableCS.SetFloat("_MeshSize", _visualizer != null ? _visualizer.MeshSize : 51f);
         _pickableCS.SetFloat("_HeightScale", _visualizer != null ? _visualizer.HeightScale : 16f);
-        _pickableCS.SetInt("_PrefabCount", _trashPrefabs.Length);
+        _pickableCS.SetInt("_PrefabCount", activePrefabs.Length);
         _pickableCS.SetMatrix("_LocalToWorldMatrix", transform.localToWorldMatrix);
         _pickableCS.SetInt("_Seed", UnityEngine.Random.Range(2, 10000));
 
@@ -134,21 +168,21 @@ public class GpuPickableScrapScatter : MonoBehaviour
                 }
 
                 var nativeData = dataRequest.GetData<PickableData>();
-                InstantiateScrapFromGPU(nativeData, actualCount);
+                InstantiateScrapFromGPU(nativeData, actualCount, activePrefabs);
                 pickableBuffer.Release();
             });
         });
     }
 
-    private void InstantiateScrapFromGPU(Unity.Collections.NativeArray<PickableData> spawnedData, uint count)
+    private void InstantiateScrapFromGPU(Unity.Collections.NativeArray<PickableData> spawnedData, uint count, GameObject[] activePrefabs)
     {
         uint spawnLimit = Math.Min(count, (uint)spawnedData.Length);
         for (int i = 1; i < spawnLimit; i++)
         {
             PickableData data = spawnedData[i];
-            if (data.prefabIndex < 0 || data.prefabIndex >= _trashPrefabs.Length) continue;
+            if (data.prefabIndex < 0 || data.prefabIndex >= activePrefabs.Length) continue;
 
-            GameObject prefab = _trashPrefabs[data.prefabIndex];
+            GameObject prefab = activePrefabs[data.prefabIndex];
             if (prefab == null) continue;
 
             GameObject instance = Instantiate(prefab, data.position, Quaternion.identity, _scrapContainer);
@@ -186,6 +220,31 @@ public class GpuPickableScrapScatter : MonoBehaviour
                     SphereCollider sphereCol = instance.AddComponent<SphereCollider>();
                     sphereCol.isTrigger = true;
                 }
+            }
+
+            // Ensure WorldItem component is attached & initialized for player pickup/cart interactions
+            if (!instance.TryGetComponent<WorldItem>(out var worldItem))
+            {
+                worldItem = instance.AddComponent<WorldItem>();
+            }
+
+            if (_itemData != null)
+            {
+                ItemState matchedState = ItemState.None;
+                foreach (var kvp in _itemData.Items)
+                {
+                    var model = kvp.Value;
+                    if (model != null && model.TryGetCapability<PickableCapability>(out var pickable) && pickable.WorldPrefab == prefab)
+                    {
+                        if (Enum.TryParse<ItemState>(kvp.Key.Trim(), out var parsedState))
+                        {
+                            matchedState = parsedState;
+                            break;
+                        }
+                    }
+                }
+
+                worldItem.Initialize(matchedState, _itemData);
             }
         }
 

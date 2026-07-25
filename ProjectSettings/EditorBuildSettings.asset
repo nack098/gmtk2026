@@ -5,11 +5,18 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
+    path: Assets/Scenes/MenuScene.unity
+    guid: d3b6a1f5a50e97d45b1b7d6f8bde08b6
+  - enabled: 1
+    path: Assets/Scenes/ZenGameScene.unity
+    guid: 871545cd348fe3e4ca5240424ec45346
+  - enabled: 1
     path: Assets/Scenes/ZenShopScene.unity
     guid: 3e3a628fed0773748a0212c5f1a062a1
   - enabled: 1
     path: Assets/Scenes/Nack.unity
     guid: c9d9a0daa0401d048830a3f86537f276
   m_configObjects:
+    com.unity.input.settings: {fileID: 11400000, guid: 9e7be553448fa2546aea5752021cbcf7, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

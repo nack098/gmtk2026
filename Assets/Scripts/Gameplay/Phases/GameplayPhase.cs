@@ -32,6 +32,9 @@ namespace TrashCount.Gameplay.Phases
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
+            var starterInputs = Object.FindAnyObjectByType<StarterAssets.StarterAssetsInputs>();
+            
+
             // Initialize/Reset clock time to 09:00 AM for the current day
             if (_manager.Data != null && _manager.Data.DateTime != null)
             {

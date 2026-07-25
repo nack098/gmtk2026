@@ -20,8 +20,8 @@ MonoBehaviour:
   - key: 'Hungry '
     value:
       DrainValue: 0.7
-      MoveSpeedMultiplier: 0.8
+      MoveSpeedMultiplier: 0.9
   - key: 'Starving '
     value:
       DrainValue: 0.4
-      MoveSpeedMultiplier: 0.6
+      MoveSpeedMultiplier: 0.7
