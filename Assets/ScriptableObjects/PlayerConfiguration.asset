@@ -21,11 +21,11 @@ MonoBehaviour:
   StaminaToHungryRatio: 0.5
   StaminaToHealthyRatio: 0.5
   CarryStaminaDrainRate: 5
-  CarrySpeedMultiplier: 0.8
+  CarrySpeedMultiplier: 0.9
   RummageStaminaCost: 15
   CartBaseStaminaDrainRate: 1
-  CartWeightStaminaMultiplier: 1.1
-  CartBaseSpeedMultiplier: 1
+  CartWeightStaminaMultiplier: 1.2
+  CartBaseSpeedMultiplier: 0.9
   PickUp: []
   references:
     version: 2

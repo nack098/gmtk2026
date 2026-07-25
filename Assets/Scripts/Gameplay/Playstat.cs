@@ -46,7 +46,7 @@ public class Playstat : MonoBehaviour
     {
         controller = GetComponent<ThirdPersonController>();
         hungerSystem = GetComponent<HungerSystem>();
-        GetComponent<StarterAssetsInputs>();
+        inputs = GetComponent<StarterAssetsInputs>();
 
         // Sync from GameData if available
         SyncFromGameData();

@@ -140,7 +140,18 @@ namespace StarterAssets
 
         private void Start()
         {
-            _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
+            if (CinemachineCameraTarget == null || CinemachineCameraTarget.CompareTag("MainCamera") || CinemachineCameraTarget.name.Contains("Main Camera"))
+            {
+                Transform root = transform.Find("PlayerCameraRoot");
+                if (root == null) root = transform.Find("CameraRoot");
+                if (root != null)
+                {
+                    CinemachineCameraTarget = root.gameObject;
+                    Debug.Log($"<color=lime>[ThirdPersonController]</color> Auto-corrected CinemachineCameraTarget from Main Camera to {root.name}!");
+                }
+            }
+
+            _cinemachineTargetYaw = CinemachineCameraTarget != null ? CinemachineCameraTarget.transform.rotation.eulerAngles.y : 0f;
 
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
@@ -186,8 +197,14 @@ namespace StarterAssets
             // set sphere position, with offset
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset,
                 transform.position.z);
-            Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers,
-                QueryTriggerInteraction.Ignore);
+
+            if (GroundLayers.value == 0)
+            {
+                GroundLayers = ~0; // Fallback to all layers if unassigned
+            }
+
+            bool sphereGrounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+            Grounded = (_controller != null && _controller.isGrounded) || sphereGrounded;
 
             // update animator if using character
             if (_hasAnimator)
@@ -313,7 +330,15 @@ namespace StarterAssets
                 }
 
                 // Jump
-                if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                bool isJumpPressed = _input.jump;
+#if ENABLE_INPUT_SYSTEM
+                if (!isJumpPressed && UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
+                {
+                    isJumpPressed = true;
+                }
+#endif
+
+                if (isJumpPressed && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
