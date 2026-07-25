@@ -11,6 +11,8 @@ namespace TrashCount.Gameplay.TrashSystem
         [SerializeField] private ItemData itemData;
 
         public ItemState State => itemState;
+        public ItemData Data => itemData;
+        public ItemModel Model => itemData != null ? itemData[itemState] : null;
         public bool IsCarried { get; private set; }
 
         private Collider _collider;

@@ -23,15 +23,36 @@ public class MenuManager : MonoBehaviour
     public TextMeshProUGUI masterValueText;
     public TextMeshProUGUI musicValueText;
     public TextMeshProUGUI sfxValueText;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    
+
+    [Header("── GameData References ───────────────────────")]
+    [Tooltip("Initial template data for starting a new game (Assets/ScriptableObjects/GameDataForStart.asset)")]
+    [SerializeField] private TrashCount.Data.GameData gameDataForStart;
+
+    [Tooltip("Main runtime game data (Assets/ScriptableObjects/MainGameData.asset)")]
+    [SerializeField] private TrashCount.Data.GameData mainGameData;
+
     void Start()
     {
-        SettingsPanel.SetActive(false);
-        menuPanel.SetActive(true);
+        // Unlock and show cursor for Main Menu UI interaction
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        if (SettingsPanel != null) SettingsPanel.SetActive(false);
+        if (menuPanel != null) menuPanel.SetActive(true);
     }
+
     public void GameStart()
     {
+        if (mainGameData != null && gameDataForStart != null)
+        {
+            mainGameData.CopyFrom(gameDataForStart);
+            Debug.Log("[MenuManager] Copied GameDataForStart into MainGameData successfully!");
+        }
+        else
+        {
+            Debug.LogWarning("[MenuManager] gameDataForStart or mainGameData is not assigned in Inspector!");
+        }
+
         SceneManager.LoadScene("ZenGameScene");
     }
     

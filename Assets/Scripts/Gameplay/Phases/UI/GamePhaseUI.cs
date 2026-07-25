@@ -15,6 +15,22 @@ namespace TrashCount.Gameplay.Phases.UI
         [SerializeField] private GameObject gameOverPanel;
         [SerializeField] private TextMeshProUGUI daysSurvivedText;
 
+        private void Awake()
+        {
+            // Ensure GamePhasePanel background images do not block UI raycasts
+            var images = GetComponentsInChildren<UnityEngine.UI.Image>(true);
+            foreach (var img in images)
+            {
+                img.raycastTarget = false;
+            }
+
+            var canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = false;
+            }
+        }
+
         private void OnEnable()
         {
             if (GamePhaseManager.Instance != null)

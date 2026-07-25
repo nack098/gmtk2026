@@ -16,6 +16,7 @@ namespace TrashCount.Gameplay.Phases.UI
 
         public ItemModel Item { get; private set; }
         public ZoneType CurrentZone { get; private set; }
+        public string DisplayName { get; private set; }
 
         private CanvasGroup _canvasGroup;
         private Canvas _parentCanvas;
@@ -26,16 +27,41 @@ namespace TrashCount.Gameplay.Phases.UI
         {
             _canvasGroup = GetComponent<CanvasGroup>();
             _parentCanvas = GetComponentInParent<Canvas>();
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.interactable = true;
+                _canvasGroup.alpha = 1.0f;
+            }
         }
 
-        public void Setup(ItemModel itemModel, ZoneType currentZone)
+        public void Setup(ItemModel itemModel, ZoneType currentZone, string displayName = "")
         {
             Item = itemModel;
             CurrentZone = currentZone;
 
-            if (itemTitleText != null && itemModel != null)
+            if (!string.IsNullOrEmpty(displayName))
             {
-                itemTitleText.text = itemModel.ToString();
+                DisplayName = displayName;
+            }
+            else if (itemModel != null && !string.IsNullOrEmpty(itemModel.ItemName))
+            {
+                DisplayName = itemModel.ItemName;
+            }
+            else
+            {
+                DisplayName = "Item";
+            }
+
+            if (itemTitleText != null)
+            {
+                itemTitleText.text = DisplayName;
+            }
+
+            if (itemIcon != null && itemModel != null && itemModel.Itemicon != null)
+            {
+                itemIcon.sprite = itemModel.Itemicon;
             }
 
             if (priceText != null && itemModel != null)

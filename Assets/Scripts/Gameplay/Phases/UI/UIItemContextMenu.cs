@@ -61,7 +61,12 @@ namespace TrashCount.Gameplay.Phases.UI
         {
             if (_targetDragItem != null && ShoppingPhaseUI.Instance != null)
             {
-                ShoppingPhaseUI.Instance.OnClickUseOnPlayer(_targetDragItem.Item);
+                bool success = ShoppingPhaseUI.Instance.OnClickUseOnPlayer(_targetDragItem);
+                if (success && _targetDragItem.CurrentZone != ZoneType.Buy)
+                {
+                    RemoveItemFromDataCollections(_targetDragItem);
+                    Destroy(_targetDragItem.gameObject);
+                }
             }
             HideContextMenu();
         }
@@ -70,9 +75,29 @@ namespace TrashCount.Gameplay.Phases.UI
         {
             if (_targetDragItem != null && ShoppingPhaseUI.Instance != null)
             {
-                ShoppingPhaseUI.Instance.OnClickUseOnFather(_targetDragItem.Item);
+                bool success = ShoppingPhaseUI.Instance.OnClickUseOnFather(_targetDragItem);
+                if (success && _targetDragItem.CurrentZone != ZoneType.Buy)
+                {
+                    RemoveItemFromDataCollections(_targetDragItem);
+                    Destroy(_targetDragItem.gameObject);
+                }
             }
             HideContextMenu();
+        }
+
+        private void RemoveItemFromDataCollections(UIDragItem dragItem)
+        {
+            if (dragItem == null || dragItem.Item == null || GamePhaseManager.Instance == null || GamePhaseManager.Instance.Data == null) return;
+
+            var data = GamePhaseManager.Instance.Data;
+            if (dragItem.CurrentZone == ZoneType.Inventory && data.InventoryData != null)
+            {
+                data.InventoryData.Remove(dragItem.Item);
+            }
+            else if (dragItem.CurrentZone == ZoneType.Cart && data.CartItemsData != null)
+            {
+                data.CartItemsData.Remove(dragItem.Item);
+            }
         }
     }
 }

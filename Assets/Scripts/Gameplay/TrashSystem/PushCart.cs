@@ -14,11 +14,14 @@ namespace TrashCount.Gameplay.TrashSystem
         [Header("Weight Settings")]
         [SerializeField] private float itemWeightMultiplier;
 
+        public static PushCart Instance { get; private set; }
+
         public bool IsBeingPushed { get; private set; }
         public PlayerInteraction CurrentPusher { get; private set; }
         public Playstat CurrentPusherStat { get; private set; }
 
         private List<WorldItem> _itemsInCart = new();
+        public List<WorldItem> ItemsInCart => _itemsInCart;
         public float TotalWeight => _itemsInCart.Count * itemWeightMultiplier;
         public int ItemCount => _itemsInCart.Count;
 
@@ -29,6 +32,7 @@ namespace TrashCount.Gameplay.TrashSystem
 
         private void Awake()
         {
+            if (Instance == null) Instance = this;
             _rigidbody = GetComponent<Rigidbody>();
         }
 

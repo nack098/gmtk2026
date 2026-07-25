@@ -18,6 +18,10 @@ namespace TrashCount.Gameplay.Phases
         {
             Debug.Log("[GameOverPhase] GAME OVER! Player or Father died (Healthy <= 0).");
 
+            // Unlock and show cursor for Game Over UI interaction
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             if (_manager != null)
             {
                 _manager.TriggerGameOver();

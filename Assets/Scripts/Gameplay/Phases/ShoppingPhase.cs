@@ -17,6 +17,9 @@ namespace TrashCount.Gameplay.Phases
         public void Enter()
         {
             Debug.Log("[ShoppingPhase] Entered Shopping Phase. Player can manage items in cart and buy new items from shop.");
+
+            // Unlock cursor and disable camera look input for UI interaction
+            SetCursorUnlockedState(true);
         }
 
         public void Update()
@@ -27,6 +30,22 @@ namespace TrashCount.Gameplay.Phases
         public void Exit()
         {
             Debug.Log("[ShoppingPhase] Shopping Phase completed.");
+
+            // Lock cursor and re-enable camera look input for gameplay
+            SetCursorUnlockedState(false);
+        }
+
+        private void SetCursorUnlockedState(bool unlocked)
+        {
+            Cursor.lockState = unlocked ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = unlocked;
+
+            var starterInputs = Object.FindAnyObjectByType<StarterAssets.StarterAssetsInputs>();
+            if (starterInputs != null)
+            {
+                starterInputs.cursorLocked = !unlocked;
+                starterInputs.cursorInputForLook = !unlocked;
+            }
         }
 
         public bool BuyItem(ItemModel item)
@@ -79,26 +98,38 @@ namespace TrashCount.Gameplay.Phases
             }
         }
 
-        public void UseOnPlayer(ItemModel item)
+        public bool UseOnPlayer(ItemModel item)
         {
-            if (item == null || _manager.Data == null) return;
+            if (item == null || _manager.Data == null) return false;
 
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.PlayerData != null)
             {
-                _manager.Data.PlayerData.Hunger += eatable.RestoreAmount;
-                Debug.Log($"[ShoppingPhase] Used item on Player. Restored {eatable.RestoreAmount} hunger.");
+                _manager.Data.PlayerData.Hunger = Mathf.Min(100f, _manager.Data.PlayerData.Hunger + eatable.RestoreAmount);
+
+                // Sync modified GameData stats into Playstat runtime instance
+                var playstat = Object.FindAnyObjectByType<Playstat>();
+                if (playstat != null)
+                {
+                    playstat.SyncFromGameData();
+                }
+
+                Debug.Log($"[ShoppingPhase] Used item on Player. Restored {eatable.RestoreAmount} hunger. Current Player Hunger: {_manager.Data.PlayerData.Hunger}");
+                return true;
             }
+            return false;
         }
 
-        public void UseOnFather(ItemModel item)
+        public bool UseOnFather(ItemModel item)
         {
-            if (item == null || _manager.Data == null) return;
+            if (item == null || _manager.Data == null) return false;
 
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.FatherData != null)
             {
-                _manager.Data.FatherData.Hunger += eatable.RestoreAmount;
-                Debug.Log($"[ShoppingPhase] Used item on Father. Restored {eatable.RestoreAmount} hunger.");
+                _manager.Data.FatherData.Hunger = Mathf.Min(100f, _manager.Data.FatherData.Hunger + eatable.RestoreAmount);
+                Debug.Log($"[ShoppingPhase] Used item on Father. Restored {eatable.RestoreAmount} hunger. Current Father Hunger: {_manager.Data.FatherData.Hunger}");
+                return true;
             }
+            return false;
         }
 
         public void CompleteShoppingPhase()
