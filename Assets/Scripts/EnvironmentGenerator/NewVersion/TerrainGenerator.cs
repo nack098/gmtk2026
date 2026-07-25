@@ -29,6 +29,10 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private float _debrisFrequency = 0.18f;
     [SerializeField] private float _debrisStrength = 0.18f;
 
+    [Header("5. Map Edge Flattening Padding")]
+    [Range(0.05f, 0.35f)]
+    [SerializeField] private float _edgeFadeMargin = 0.18f; // Outer 18% of terrain smoothly flattens to 0.0
+
     public RenderTexture FinalHeightMapRT { get; private set; }
 
     private int _kStepCA, _kUpscaleCA, _kSeedJFA, _kStepJFA, _kFinalizeDistanceCones, _kApplyWarpAndRoughness;
@@ -57,7 +61,7 @@ public class TerrainGenerator : MonoBehaviour
             startRes *= 2;
         }
 
-        // 1. CPU-side Poisson/Spaced Seed Placement
+        // 1. CPU-side Poisson/Spaced Seed Placement (Restricted to inner bounds)
         float scaledMinDist = (startRes / 16f) * _minSeedDistance;
         List<Vector2Int> lowResSeeds = GenerateSpacedSeeds(_pileAmount, startRes, scaledMinDist);
 
@@ -78,7 +82,6 @@ public class TerrainGenerator : MonoBehaviour
         initialSeedTex.SetPixels(seedColors);
         initialSeedTex.Apply();
 
-        // FIX: Copy directly on GPU without touching RenderTexture.active or running a Blit pass
         Graphics.CopyTexture(initialSeedTex, gridA);
         DestroyImmediate(initialSeedTex);
 
@@ -153,7 +156,7 @@ public class TerrainGenerator : MonoBehaviour
 
         Swap(ref gridA, ref gridB);
 
-        // 6. Domain Warping & Debris Roughness Pass
+        // 6. Domain Warping, Debris Roughness, & Edge Mask Pass
         if (FinalHeightMapRT != null) FinalHeightMapRT.Release();
         FinalHeightMapRT = CreateRT(_targetRes, RenderTextureFormat.RFloat, FilterMode.Bilinear);
 
@@ -164,11 +167,11 @@ public class TerrainGenerator : MonoBehaviour
         _terrainCS.SetFloat("_WarpAmplitude", _warpAmplitude);
         _terrainCS.SetFloat("_DebrisFrequency", _debrisFrequency);
         _terrainCS.SetFloat("_DebrisStrength", _debrisStrength);
+        _terrainCS.SetFloat("_EdgeFadeMargin", _edgeFadeMargin);
         _terrainCS.SetVector("_NoiseOffset", new Vector2(Random.Range(0f, 1000f), Random.Range(0f, 1000f)));
 
         _terrainCS.Dispatch(_kApplyWarpAndRoughness, Mathf.CeilToInt(_targetRes / 8f), Mathf.CeilToInt(_targetRes / 8f), 1);
 
-        // FIX: Ensure no active RT remains set before destroying intermediate resources
         RenderTexture.active = null;
 
         // Cleanup intermediate buffers
@@ -177,7 +180,7 @@ public class TerrainGenerator : MonoBehaviour
         jfaA?.Release();
         jfaB?.Release();
 
-        Debug.Log("<color=cyan>[TerrainGenerator]</color> Fast GPU Heightmap Generated Successfully!");
+        Debug.Log("<color=cyan>[TerrainGenerator]</color> Flat-Border Terrain Generated Successfully!");
     }
 
     private void DispatchPass(int kernel, RenderTexture src, RenderTexture dst, int res, int threshold)
@@ -213,10 +216,16 @@ public class TerrainGenerator : MonoBehaviour
         List<Vector2Int> seeds = new List<Vector2Int>();
         int attempts = 1000;
 
+        // Force seeds to spawn inside 15% to 85% inner bounds of the map
+        int margin = Mathf.Max(2, Mathf.FloorToInt(res * 0.15f));
+
         while (seeds.Count < count && attempts > 0)
         {
             --attempts;
-            Vector2Int candidate = new Vector2Int((int)Random.Range(2, res - 2), (int)Random.Range(2, res - 2));
+            Vector2Int candidate = new Vector2Int(
+                (int)Random.Range(margin, res - margin),
+                (int)Random.Range(margin, res - margin)
+            );
 
             bool valid = true;
             foreach (Vector2Int s in seeds)

@@ -20,6 +20,9 @@ public class StylizedPostProcessFeature : ScriptableRendererFeature
         {
             _mat = mat;
             renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+            
+            // Require depth texture so URP binds _CameraDepthTexture for bilateral sampling
+            ConfigureInput(ScriptableRenderPassInput.Depth);
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -31,7 +34,16 @@ public class StylizedPostProcessFeature : ScriptableRendererFeature
 
             if (resourceData == null || cameraData == null) return;
 
+            // GUARD 1: Ignore Preview (Material Inspector / Asset Thumbnails) and Reflection cameras!
+            if (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection)
+            {
+                return;
+            }
+
             TextureHandle activeColor = resourceData.activeColorTexture;
+
+            // GUARD 2: Ensure active color handle is valid before building render passes
+            if (!activeColor.IsValid()) return;
 
             RenderTextureDescriptor desc = cameraData.cameraTargetDescriptor;
             desc.depthBufferBits = 0;
@@ -44,11 +56,21 @@ public class StylizedPostProcessFeature : ScriptableRendererFeature
                 passData.dst = tempTexture;
 
                 builder.UseTexture(passData.src, AccessFlags.Read);
+                
+                // Read camera depth texture for bilateral depth calculations
+                if (resourceData.cameraDepthTexture.IsValid())
+                {
+                    builder.UseTexture(resourceData.cameraDepthTexture, AccessFlags.Read);
+                }
+
                 builder.SetRenderAttachment(passData.dst, 0, AccessFlags.Write);
 
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
-                    Blitter.BlitTexture(context.cmd, data.src, new Vector4(1f, 1f, 0f, 0f), data.material, 0);
+                    if (data.src.IsValid() && data.material != null)
+                    {
+                        Blitter.BlitTexture(context.cmd, data.src, new Vector4(1f, 1f, 0f, 0f), data.material, 0);
+                    }
                 });
             }
 
@@ -62,7 +84,10 @@ public class StylizedPostProcessFeature : ScriptableRendererFeature
 
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
-                    Blitter.BlitTexture(context.cmd, data.src, new Vector4(1f, 1f, 0f, 0f), 0, false);
+                    if (data.src.IsValid())
+                    {
+                        Blitter.BlitTexture(context.cmd, data.src, new Vector4(1f, 1f, 0f, 0f), 0, false);
+                    }
                 });
             }
         }
@@ -87,6 +112,12 @@ public class StylizedPostProcessFeature : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
+        // GUARD 3: Don't enqueue pass during inspector camera rendering
+        if (renderingData.cameraData.cameraType == CameraType.Preview || renderingData.cameraData.cameraType == CameraType.Reflection)
+        {
+            return;
+        }
+
         if (_pass != null && _settings.postProcessMaterial != null)
         {
             renderer.EnqueuePass(_pass);

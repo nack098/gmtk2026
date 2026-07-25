@@ -323,37 +323,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
---- !u!1 &329489514
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 329489515}
-  m_Layer: 0
-  m_Name: TestContainer2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &329489515
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 329489514}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &350488398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -804,6 +773,7 @@ MonoBehaviour:
   _warpAmplitude: 2
   _debrisFrequency: 0.14
   _debrisStrength: 0.3
+  _edgeFadeMargin: 0.248
 --- !u!114 &1049395788
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -898,7 +868,7 @@ MonoBehaviour:
   _heightMapToMesh: {fileID: 1049395788}
   _grassGenerator: {fileID: 1049395793}
   _junkPopulator: {fileID: 1049395792}
-  _junkColliderPool: {fileID: 0}
+  _junkColliderPool: {fileID: 1049395795}
   _scrapPopulator: {fileID: 1049395794}
 --- !u!114 &1049395792
 MonoBehaviour:
@@ -1176,7 +1146,6 @@ SceneRoots:
   - {fileID: 62536502}
   - {fileID: 1049395783}
   - {fileID: 1775427045}
-  - {fileID: 329489515}
   - {fileID: 350488398}
   - {fileID: 1488487835}
   - {fileID: 973695967}
