@@ -1,46 +1,132 @@
-// Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel ResetIndex
-#pragma kernel Culling
+#pragma kernel K_DownsampleMip0
+#pragma kernel K_DownsampleMips
+#pragma kernel ResetIndexBatch
+#pragma kernel CullingBatch
 
-struct GrassData
+struct ScrapInstanceData
 {
-    float id;
-    float value;
-    float2 pad0;
-    float3 position;
-    float pad1;
+    float id;          
+    float3 rotation;   // Pitch (X), Yaw (Y), Roll (Z) in degrees
+    float2 scale;      
+    float3 position;   
+    float3 normal;     
+    float pad;         
 };
 
-StructuredBuffer<GrassData> _AllInstancesBuffer;
-RWStructuredBuffer<GrassData> _CulledInstancesBuffer;
-RWStructuredBuffer<uint> _ArgumentsBuffer;
+// --- Hi-Z Downsampling Resources ---
+Texture2D<float> _InputSource;
+RWTexture2D<float> _OutputMip;
+int2 _OutputSize;
 
+// --- Culling & Indirect Resources ---
+StructuredBuffer<ScrapInstanceData> _AllInstancesBuffer;
+RWStructuredBuffer<ScrapInstanceData> _CulledInstancesBuffer;
+RWStructuredBuffer<uint> _GlobalArgsBuffer;
+RWStructuredBuffer<uint> _CounterBuffer;
+
+matrix _VPMatrix;
 float4 _FrustumPlanes[6];
-uint _TotalInstances;
+float3 _CameraPosition;
+float _MaxDrawDistance;
 float _BoundingRadius;
+int _TotalInstances;
+int _MaxInstancesPerType;
+int _ScrapTypeCount;
+float _ScreenWidth; // WebGPU-safe explicit screen width uniform
 
-[numthreads(64,1,1)]
-void Culling(uint3 id: SV_DispatchThreadID)
+Texture2D<float> _HiZBuffer;
+SamplerState sampler_PointClamp;
+
+// --- Hi-Z Kernels ---
+[numthreads(8, 8, 1)]
+void K_DownsampleMip0(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= _TotalInstances) return;
-    
-    GrassData instance = _AllInstancesBuffer[id.x];
-    
-    for (int i = 0; i < 6; ++i)
-    {
-        float4 currentPlane = _FrustumPlanes[i];
-        float distance = dot(currentPlane.xyz, instance.position) + currentPlane.w;
-        if (distance < -_BoundingRadius)
-            return;
-    }
-    
-    uint destinationIndex;
-    InterlockedAdd(_ArgumentsBuffer[1], 1, destinationIndex);
-    _CulledInstancesBuffer[destinationIndex] = instance;
+    if (id.x >= (uint)_OutputSize.x || id.y >= (uint)_OutputSize.y) return;
+
+    int2 baseCoords = id.xy * 2;
+    float d0 = _InputSource[baseCoords + int2(0, 0)];
+    float d1 = _InputSource[baseCoords + int2(1, 0)];
+    float d2 = _InputSource[baseCoords + int2(0, 1)];
+    float d3 = _InputSource[baseCoords + int2(1, 1)];
+
+    float minDepth = min(min(d0, d1), min(d2, d3));
+    _OutputMip[id.xy] = minDepth;
 }
 
-[numthreads(1,1,1)]
-void ResetIndex(uint3 id: SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void K_DownsampleMips(uint3 id : SV_DispatchThreadID)
 {
-    _ArgumentsBuffer[1] = 0;
+    if (id.x >= (uint)_OutputSize.x || id.y >= (uint)_OutputSize.y) return;
+
+    int2 baseCoords = id.xy * 2;
+    float d0 = _OutputMip[baseCoords + int2(0, 0)];
+    float d1 = _OutputMip[baseCoords + int2(1, 0)];
+    float d2 = _OutputMip[baseCoords + int2(0, 1)];
+    float d3 = _OutputMip[baseCoords + int2(1, 1)];
+
+    float minDepth = min(min(d0, d1), min(d2, d3));
+    _OutputMip[id.xy] = minDepth;
+}
+
+// --- Culling Kernels ---
+[numthreads(64, 1, 1)]
+void ResetIndexBatch(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_ScrapTypeCount) return;
+    _GlobalArgsBuffer[id.x * 5 + 1] = 0; 
+}
+
+[numthreads(64, 1, 1)]
+void CullingBatch(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TotalInstances) return;
+
+    ScrapInstanceData instance = _AllInstancesBuffer[id.x];
+    uint typeIndex = (uint)instance.id;
+    if (typeIndex >= (uint)_ScrapTypeCount) return;
+
+    float3 pos = instance.position;
+    float maxRadius = _BoundingRadius * max(instance.scale.x, instance.scale.y);
+
+    // 1. Distance Culling
+    float distSq = dot(pos - _CameraPosition, pos - _CameraPosition);
+    if (distSq > (_MaxDrawDistance * _MaxDrawDistance)) return;
+
+    // 2. Frustum Culling
+    [unroll]
+    for (int i = 0; i < 6; i++)
+    {
+        float distanceToPlane = dot(_FrustumPlanes[i].xyz, pos) + _FrustumPlanes[i].w;
+        if (distanceToPlane < -maxRadius) return;
+    }
+
+    // 3. Hi-Z Occlusion Culling
+    float4 clipPos = mul(_VPMatrix, float4(pos, 1.0));
+    if (clipPos.w > 0.0)
+    {
+        float3 ndc = clipPos.xyz / clipPos.w;
+        float2 screenUV = ndc.xy * 0.5 + 0.5;
+
+        if (screenUV.x >= 0.0 && screenUV.x <= 1.0 && screenUV.y >= 0.0 && screenUV.y <= 1.0)
+        {
+            float screenFootprint = max(maxRadius / clipPos.w * _ScreenWidth, 1.0);
+            float mipLevel = clamp(log2(screenFootprint), 0.0, 7.0);
+
+            float hiZDepth = _HiZBuffer.SampleLevel(sampler_PointClamp, screenUV, (int)mipLevel);
+            if (ndc.z < hiZDepth)
+            {
+                // return; // Uncomment when Hi-Z input texture is actively bound
+            }
+        }
+    }
+
+    // 4. Append to Buffer
+    uint writeOffset;
+    InterlockedAdd(_GlobalArgsBuffer[typeIndex * 5 + 1], 1, writeOffset);
+
+    if (writeOffset < (uint)_MaxInstancesPerType)
+    {
+        uint targetIndex = (typeIndex * _MaxInstancesPerType) + writeOffset;
+        _CulledInstancesBuffer[targetIndex] = instance;
+    }
 }

@@ -18,9 +18,15 @@ namespace Takayama.Math
         /// </summary>
         public static float Range(float min, float max) => min + (max - min) * Value();
 
+        /// <summary>
+        /// Integer uniform sample in range [min, maxInclusive].
+        /// </summary>
+        public static int Range(int min, int maxInclusive) => _rand.Next(min, maxInclusive);
+
         #endregion
 
         #region Gaussian / Normal Distributions
+
         /// <summary>
         /// Generates a random sample from a Gaussian (Normal) distribution.
         /// </summary>
@@ -46,6 +52,7 @@ namespace Takayama.Math
         #endregion
 
         #region Continuous Distributions (Loot, Spawns & Intervals)
+
         /// <summary>
         /// Exponential distribution (e.g., time intervals between random events, trash spawns).
         /// Rate (lambda) controls frequency.
@@ -54,6 +61,16 @@ namespace Takayama.Math
         {
             if (rate <= 0f) rate = 0.0001f;
             return (float)(-System.Math.Log(1.0 - _rand.NextDouble()) / rate);
+        }
+
+        /// <summary>
+        /// Inverse Exponential probability decay calculation based on progress [0..1].
+        /// Returns true if spawn passes the decaying probability check: P = exp(-lambda * progress).
+        /// </summary>
+        public static bool InverseExponentialCheck(float currentProgressNormalized, float decayRate = 1.5f)
+        {
+            float spawnProbability = (float)System.Math.Exp(-decayRate * currentProgressNormalized);
+            return Value() <= spawnProbability;
         }
 
         /// <summary>
@@ -131,6 +148,7 @@ namespace Takayama.Math
         #endregion
 
         #region Discrete Distributions (Counts & Occurrences)
+
         /// <summary>
         /// Poisson distribution (number of random independent events occurring in a fixed interval).
         /// Great for deciding "how many pieces of trash drop from a heap at once".
@@ -167,6 +185,7 @@ namespace Takayama.Math
             }
             return successes;
         }
+
         #endregion
     }
 }

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d319953de10d6624ab387ada72a62bc5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - terrainGenerator: {instanceID: 0}
+  - visualizer: {instanceID: 0}
+  - scatterShader: {fileID: 7200000, guid: 65f10d68500c5e34a8af9edddc373a74, type: 3}
+  - cullingShader: {fileID: 7200000, guid: 8a6a25fbfa4e4784193c7b3f610e054a, type: 3}
+  - grassMaterial: {fileID: 2100000, guid: 256d7b690833d2246b7f935615bd2fd7, type: 2}
+  - targetCamera: {instanceID: 0}
+  - grassMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

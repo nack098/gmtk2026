@@ -3,29 +3,27 @@
 
 // --- Declare All Material Uniforms ---
 CBUFFER_START(UnityPerMaterial)
-    // 1. Bilateral & Bloom Controls
-    float _SpatialSigma;
-    float _ColorSigma;
-    float _DepthSigma;
-    float _BloomThreshold;
-    float _BloomIntensity;
-
-    // 2. Saturation & Tinting
-    float _Saturation;
+    // Group all 16-byte vectors (float4) first!
     float4 _ColorTint;
-
-    // 3. Vignette Controls
-    float _VignetteIntensity;
-    float _VignetteSmoothness;
-
-    // 4. Color Balance
     float4 _Shadows;
     float4 _Midtones;
     float4 _Highlights;
 
-    // 5. Exposure & Contrast
+    // Group all scalar floats together so they pack neatly into 16-byte chunks (4 floats = 1 vector4)
+    float _SpatialSigma;
+    float _ColorSigma;
+    float _DepthSigma;
+    float _BloomThreshold;
+    
+    float _BloomIntensity;
+    float _Saturation;
+    float _VignetteIntensity;
+    float _VignetteSmoothness;
+    
     float _Exposure;
     float _Contrast;
+    float _Pad0; // Optional padding to keep total size safe if needed
+    float _Pad1;
 CBUFFER_END
 
 // --- Math & Color Utilities ---

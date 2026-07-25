@@ -1,0 +1,172 @@
+#pragma kernel CSScatterGrassBatched
+
+struct GrassData
+{
+    float id;          
+    float3 rotation;   
+    float2 scale;      
+    float3 position;   
+    float3 normal;     
+    float pad;         
+};
+
+RWStructuredBuffer<GrassData> _GrassInstances;
+RWStructuredBuffer<uint> _CounterBuffer;
+StructuredBuffer<float4> _ChunkPositions; 
+Texture2D<float4> _HeightMap;
+SamplerState sampler_HeightMap;
+
+uint _MaxGrassPerChunk;
+uint _TotalMaxGrass;
+uint _GridX;
+uint _GridY;
+float _ChunkSize;
+
+float3 _TerrainOrigin;
+float2 _TerrainSize;
+
+float _SpawnDecayRate;
+float _HeightLimitCutoff;
+float _FlatlandBias;
+bool _UseBetaClustering;
+float _BetaAlpha;
+float _BetaBeta;
+float2 _BaseScale;
+float2 _ScaleRandomness;
+float _HeightScale;
+
+groupshared uint gs_GroupValidCount;
+groupshared uint gs_GlobalBaseIndex;
+
+float Hash(uint state)
+{
+    state = (state ^ 61) ^ (state >> 16);
+    state *= 9;
+    state = state ^ (state >> 4);
+    state *= 0x27d4eb2d;
+    state = state ^ (state >> 15);
+    return float(state) / 4294967295.0;
+}
+
+bool InverseExponentialCheck(float currentRatio, float decayRate, float u)
+{
+    float prob = exp(-decayRate * currentRatio);
+    return u <= prob;
+}
+
+float3 CalculateHeightmapNormal(float2 uv, float2 uvTexelSize, float heightScale, float2 terrainSize)
+{
+    float hL = _HeightMap.SampleLevel(sampler_HeightMap, uv - float2(uvTexelSize.x, 0), 0).r * heightScale;
+    float hR = _HeightMap.SampleLevel(sampler_HeightMap, uv + float2(uvTexelSize.x, 0), 0).r * heightScale;
+    float hD = _HeightMap.SampleLevel(sampler_HeightMap, uv - float2(0, uvTexelSize.y), 0).r * heightScale;
+    float hU = _HeightMap.SampleLevel(sampler_HeightMap, uv + float2(0, uvTexelSize.y), 0).r * heightScale;
+
+    float stepX = (2.0 * uvTexelSize.x) * terrainSize.x;
+    float stepZ = (2.0 * uvTexelSize.y) * terrainSize.y;
+
+    float3 va = float3(stepX, hR - hL, 0.0);
+    float3 vb = float3(0.0, hU - hD, stepZ);
+
+    return normalize(cross(vb, va));
+}
+
+[numthreads(64, 1, 1)]
+void CSScatterGrassBatched(
+    uint3 id : SV_DispatchThreadID, 
+    uint3 groupID : SV_GroupID, 
+    uint3 groupThreadID : SV_GroupThreadID)
+{
+    if (groupThreadID.x == 0)
+    {
+        gs_GroupValidCount = 0;
+        gs_GlobalBaseIndex = 0;
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    uint bladeIndexInChunk = groupThreadID.x + groupID.x * 64;
+
+    uint chunkX = groupID.y;
+    uint chunkZ = groupID.z;
+    uint chunkIdx = chunkX + chunkZ * _GridX;
+
+    bool isValidBlade = false;
+    GrassData instanceData = (GrassData)0;
+
+    float4 chunkData = _ChunkPositions[chunkIdx];
+
+    if (bladeIndexInChunk < _MaxGrassPerChunk && chunkData.w > 0.0)
+    {
+        float3 chunkWorldPos = chunkData.xyz;
+        uint seed = (bladeIndexInChunk + chunkIdx * _MaxGrassPerChunk) * 17u + 1u;
+        float currentRatio = float(bladeIndexInChunk) / float(_MaxGrassPerChunk);
+
+        if (InverseExponentialCheck(currentRatio, _SpawnDecayRate, Hash(seed++)))
+        {
+            float normX = Hash(seed++);
+            float normZ = Hash(seed++);
+
+            float localX = normX * _ChunkSize;
+            float localZ = normZ * _ChunkSize;
+            float3 worldXZ = chunkWorldPos + float3(localX, 0.0, localZ);
+
+            // Calculate exact UV coordinate on terrain from global world position
+            float2 globalUV = (worldXZ.xz - _TerrainOrigin.xz) / _TerrainSize;
+            globalUV = saturate(globalUV);
+
+            float heightVal = _HeightMap.SampleLevel(sampler_HeightMap, globalUV, 0).r;
+
+            if (heightVal >= 0.0 && heightVal <= _HeightLimitCutoff)
+            {
+                float normalizedHeight = saturate(heightVal / max(0.001, _HeightLimitCutoff));
+                float spawnWeight = lerp(1.0, 1.0 - normalizedHeight, _FlatlandBias);
+
+                if (Hash(seed++) <= spawnWeight)
+                {
+                    // FIX: Place height relative to overall terrain origin!
+                    float localY = heightVal * _HeightScale;
+                    float3 worldPos = float3(worldXZ.x, _TerrainOrigin.y + localY, worldXZ.z);
+
+                    uint mapWidth, mapHeight;
+                    _HeightMap.GetDimensions(mapWidth, mapHeight);
+                    float2 texelSize = float2(1.0 / float(mapWidth), 1.0 / float(mapHeight));
+
+                    float3 surfaceNormal = CalculateHeightmapNormal(globalUV, texelSize, _HeightScale, _TerrainSize);
+
+                    float randW = _BaseScale.x + lerp(-_ScaleRandomness.x, _ScaleRandomness.x, Hash(seed++));
+                    float randH = _BaseScale.y + lerp(-_ScaleRandomness.y, _ScaleRandomness.y, Hash(seed++));
+
+                    instanceData.id = 0.0;
+                    instanceData.rotation = float3(0.0, Hash(seed++) * 360.0, 0.0);
+                    instanceData.scale = float2(max(0.01, randW), max(0.01, randH));
+                    instanceData.position = worldPos;
+                    instanceData.normal = surfaceNormal;
+                    instanceData.pad = 0.0;
+
+                    isValidBlade = true;
+                }
+            }
+        }
+    }
+
+    uint localWriteOffset = 0;
+    if (isValidBlade)
+    {
+        InterlockedAdd(gs_GroupValidCount, 1u, localWriteOffset);
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (groupThreadID.x == 0 && gs_GroupValidCount > 0)
+    {
+        InterlockedAdd(_CounterBuffer[0], gs_GroupValidCount, gs_GlobalBaseIndex);
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (isValidBlade)
+    {
+        uint finalWriteIndex = gs_GlobalBaseIndex + localWriteOffset;
+        if (finalWriteIndex < _TotalMaxGrass)
+        {
+            _GrassInstances[finalWriteIndex] = instanceData;
+        }
+    }
+}
