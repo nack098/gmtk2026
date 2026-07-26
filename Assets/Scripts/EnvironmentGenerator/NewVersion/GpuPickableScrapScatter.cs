@@ -236,7 +236,8 @@ public class GpuPickableScrapScatter : MonoBehaviour
                     var model = kvp.Value;
                     if (model != null && model.TryGetCapability<PickableCapability>(out var pickable) && pickable.WorldPrefab == prefab)
                     {
-                        if (Enum.TryParse<ItemState>(kvp.Key.Trim(), out var parsedState))
+                        string cleanKey = kvp.Key.Trim().Replace("-", "_").Replace(" ", "_");
+                        if (Enum.TryParse<ItemState>(cleanKey, true, out var parsedState))
                         {
                             matchedState = parsedState;
                             break;

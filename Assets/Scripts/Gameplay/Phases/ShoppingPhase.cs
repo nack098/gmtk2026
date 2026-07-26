@@ -105,6 +105,10 @@ namespace TrashCount.Gameplay.Phases
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.PlayerData != null)
             {
                 _manager.Data.PlayerData.Hunger = Mathf.Min(100f, _manager.Data.PlayerData.Hunger + eatable.RestoreAmount);
+                if (eatable.HealthAmount > 0)
+                {
+                    _manager.Data.PlayerData.Healthy = Mathf.Min(100f, _manager.Data.PlayerData.Healthy + eatable.HealthAmount);
+                }
 
                 // Sync modified GameData stats into Playstat runtime instance
                 var playstat = Object.FindAnyObjectByType<Playstat>();
@@ -113,7 +117,7 @@ namespace TrashCount.Gameplay.Phases
                     playstat.SyncFromGameData();
                 }
 
-                Debug.Log($"[ShoppingPhase] Used item on Player. Restored {eatable.RestoreAmount} hunger. Current Player Hunger: {_manager.Data.PlayerData.Hunger}");
+                Debug.Log($"[ShoppingPhase] Used item on Player. Restored {eatable.RestoreAmount} hunger, {eatable.HealthAmount} health. Current Player Hunger: {_manager.Data.PlayerData.Hunger}");
                 return true;
             }
             return false;
@@ -126,7 +130,11 @@ namespace TrashCount.Gameplay.Phases
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.FatherData != null)
             {
                 _manager.Data.FatherData.Hunger = Mathf.Min(100f, _manager.Data.FatherData.Hunger + eatable.RestoreAmount);
-                Debug.Log($"[ShoppingPhase] Used item on Father. Restored {eatable.RestoreAmount} hunger. Current Father Hunger: {_manager.Data.FatherData.Hunger}");
+                if (eatable.HealthAmount > 0)
+                {
+                    _manager.Data.FatherData.Healthy = Mathf.Min(100f, _manager.Data.FatherData.Healthy + eatable.HealthAmount);
+                }
+                Debug.Log($"[ShoppingPhase] Used item on Father. Restored {eatable.RestoreAmount} hunger, {eatable.HealthAmount} health. Current Father Hunger: {_manager.Data.FatherData.Hunger}");
                 return true;
             }
             return false;

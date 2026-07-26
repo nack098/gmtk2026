@@ -182,7 +182,7 @@ Transform:
   m_GameObject: {fileID: 184932234}
   serializedVersion: 2
   m_LocalRotation: {x: 0.13791591, y: 0.00000013187216, z: -0.000000018362744, w: 0.99044394}
-  m_LocalPosition: {x: 0, y: 8.34, z: -10}
+  m_LocalPosition: {x: 0, y: 3.34, z: -6.615}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -273,7 +273,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 17.3
+  field of view: 24.7
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -981,6 +981,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GpuJunkyardColliderPool
   _populator: {fileID: 1049395792}
   _targetPlayer: {fileID: 1519730808}
+  _targetCart: {fileID: 0}
   _proximityRadius: 25
   _maxActiveColliders: 150
   _updateInterval: 0.1

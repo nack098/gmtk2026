@@ -203,6 +203,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 387225125353903043, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 404088568806225611, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 511651636333113328, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: jump
       value: 0
@@ -210,6 +218,10 @@ PrefabInstance:
     - target: {fileID: 511651636333113328, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1125455366703949890, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 1547118941219029984, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: pushLayers.m_Bits
@@ -291,13 +303,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3169032019673152067, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 3452619616725148538, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: m_Name
       value: Muryotaisu
       objectReference: {fileID: 0}
+    - target: {fileID: 3673956479655232818, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 4846550525510449982, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: inputs
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6781573030928039371, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: CartSocket
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7927814500214295341, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8048165246968364122, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 8233098296852161466, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
       propertyPath: m_Controller
@@ -973,6 +1005,11 @@ CanvasRenderer:
 Transform:
   m_CorrespondingSourceObject: {fileID: 3331915155745455325, guid: e4aedb39e9f545d4ea4823858526bc32, type: 3}
   m_PrefabInstance: {fileID: 120685027}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &553182238 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4139950479759676319, guid: b7ec9f520b976634eafbc268257938a8, type: 3}
+  m_PrefabInstance: {fileID: 5871076962129845068}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &622348300
 GameObject:
@@ -1743,6 +1780,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.Phases.UI.ShoppingPhaseUI
   shoppingPanel: {fileID: 0}
+  itemData: {fileID: 0}
   cartZoneContainer: {fileID: 0}
   inventoryZoneContainer: {fileID: 0}
   buyZoneContainer: {fileID: 0}
@@ -2294,8 +2332,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonAim
   AimCollisionFilter:
     serializedVersion: 2
-    m_Bits: 1
-  IgnoreTag: 
+    m_Bits: 0
+  IgnoreTag: Player
   AimDistance: 200
   NoiseCancellation: 1
 --- !u!114 &1422199531
@@ -2316,11 +2354,11 @@ MonoBehaviour:
   CameraSide: 1
   CameraDistance: 3.5
   AvoidObstacles:
-    Enabled: 0
+    Enabled: 1
     CollisionFilter:
       serializedVersion: 2
-      m_Bits: 1
-    IgnoreTag: 
+      m_Bits: 0
+    IgnoreTag: Player
     CameraRadius: 0.2
     DampingIntoCollision: 0
     DampingFromCollision: 0.5
@@ -2813,7 +2851,7 @@ PrefabInstance:
       objectReference: {fileID: 698970942}
     - target: {fileID: 1254226023639346458, guid: 9506e11a8c766f64e833ff0c7a5c9a47, type: 3}
       propertyPath: gameplayDurationMinutes
-      value: 3
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 5657166076157933511, guid: 9506e11a8c766f64e833ff0c7a5c9a47, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3398,7 +3436,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GpuJunkyardColliderPool
   _populator: {fileID: 2139622085}
   _targetPlayer: {fileID: 120685028}
-  _targetCart: {fileID: 0}
+  _targetCart: {fileID: 553182238}
   _proximityRadius: 25
   _maxActiveColliders: 150
   _updateInterval: 0.1
@@ -3423,10 +3461,10 @@ MonoBehaviour:
   - {fileID: 242888461646047245, guid: a6135560cbb78434d9174db1b7db995a, type: 3}
   - {fileID: 4702471856202731620, guid: 7bb71a78bbcacfe468884439e28f0399, type: 3}
   _scrapDensityGrid: 50
-  _minHeightThreshold: 0.08
+  _minHeightThreshold: 0.5
   _basePoissonLambda: 0.25
   _positionJitter: 0.25
-  _scaleRange: {x: 0.2, y: 0.2, z: 0}
+  _scaleRange: {x: 0.5, y: 0.5, z: 0}
   _alignToSurfaceNormal: 1
   _maxNormalTiltAngle: 25
   _scrapContainer: {fileID: 0}
@@ -3601,6 +3639,7 @@ MonoBehaviour:
   _warpAmplitude: 2
   _debrisFrequency: 0.14
   _debrisStrength: 0.3
+  _edgeFadeMargin: 0.18
 --- !u!114 &2139622090
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3696,7 +3735,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8679066745753176147, guid: b7ec9f520b976634eafbc268257938a8, type: 3}
       propertyPath: m_Name
-      value: ' '
+      value: Cart
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

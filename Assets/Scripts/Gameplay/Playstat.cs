@@ -229,9 +229,9 @@ public class Playstat : MonoBehaviour
         controller.SprintSpeed = _baseSprintSpeed * stateSpeedMultiplier;
     }
 
-    public void EatFood(float amount)
+    public void EatFood(float hungerAmount, float healthAmount = 0f)
     {
-        currentHungry += amount;
+        currentHungry += hungerAmount;
 
         if (currentHungry > MaxHungry)
         {
@@ -239,10 +239,15 @@ public class Playstat : MonoBehaviour
             currentHungry = MaxHungry;
 
             // Convert excess Hungry to Stamina based on StaminaToHungryRatio
-            float hungryRatio =playerData.StaminaToHungryRatio;
+            float hungryRatio = playerData.StaminaToHungryRatio;
             float staminaGain = overflowHungry * hungryRatio;
 
             currentStamina = Mathf.Min(MaxStamina, currentStamina + staminaGain);
+        }
+
+        if (healthAmount > 0f)
+        {
+            Heal(healthAmount);
         }
     }
 

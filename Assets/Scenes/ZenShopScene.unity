@@ -4942,6 +4942,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.Phases.UI.ShoppingPhaseUI
   shoppingPanel: {fileID: 1818411714}
+  itemData: {fileID: 11400000, guid: 1f63c7806899bcc4d8ab9521668152e1, type: 2}
   cartZoneContainer: {fileID: 992081515}
   inventoryZoneContainer: {fileID: 1296679620}
   buyZoneContainer: {fileID: 1781229227}
@@ -4958,6 +4959,8 @@ MonoBehaviour:
   fatherHealthyText: {fileID: 1972775276}
   fatherHungerText: {fileID: 1083248942}
   statusMessageText: {fileID: 218056157}
+  minShopItems: 2
+  maxShopItems: 14
 --- !u!114 &922660635
 MonoBehaviour:
   m_ObjectHideFlags: 0
