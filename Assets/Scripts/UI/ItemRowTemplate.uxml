@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="item-row">
+        <!-- Compact Icon -->
+        <ui:VisualElement name="item-icon" class="item-icon" />
+        
+        <!-- Text & Info -->
+        <ui:Label name="item-name" text="Apple" class="item-title" />
+        <ui:Label name="item-price" text="1,000$" class="item-cost" />
+    </ui:VisualElement>
+</ui:UXML>

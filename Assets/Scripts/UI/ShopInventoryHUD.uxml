@@ -1,0 +1,43 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Style src="ShopInventoryHUD.uss" />
+
+    <ui:VisualElement name="shop-hud-root">
+        <!-- MAIN PANEL -->
+        <ui:VisualElement name="main-panel">
+            
+            <!-- LEFT COLUMN: SHOP / MARKET -->
+            <ui:VisualElement name="section-shop" class="hud-column">
+                <ui:VisualElement class="header-container">
+                    <ui:Label text="SHOP / MARKET" class="column-header-title" />
+                    <ui:Label text="(Drag to sell)" class="column-header-subtitle" />
+                </ui:VisualElement>
+                
+                <ui:ScrollView name="shop-item-list" class="item-list-container">
+                    <!-- Dynamic Items -->
+                </ui:ScrollView>
+
+                <!-- DROP OVERLAY FOR DRAG TO SELL -->
+                <ui:VisualElement name="shop-drop-overlay" class="drop-overlay hidden">
+                    <ui:Label text="DRAG HERE TO SELL" class="drop-overlay-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- MIDDLE COLUMN: CART -->
+            <ui:VisualElement name="section-cart" class="hud-column">
+                <ui:Label text="CART" class="column-header" />
+                <ui:ScrollView name="cart-item-list" class="item-list-container">
+                    <!-- Dynamic Cart Items -->
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+            <!-- RIGHT COLUMN: PLAYER INVENTORY -->
+            <ui:VisualElement name="section-inventory" class="hud-column">
+                <ui:Label text="INVENTORY" class="column-header" />
+                <ui:ScrollView name="inventory-item-list" class="item-list-container">
+                    <!-- Dynamic Inventory Items -->
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
