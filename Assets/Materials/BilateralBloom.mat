@@ -33,32 +33,32 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AOBias: 0.0384
-    - _AOIntensity: 1.19
-    - _AORadius: 2.42
+    - _AOBias: 0.0839
+    - _AOIntensity: 0.42
+    - _AORadius: 0.78
     - _AirDustDensity: 0.0003
     - _AirDustNoiseScale: 0.278
     - _AirDustStartDistance: 34.5
-    - _AnimatedFogIntensity: 0.93
+    - _AnimatedFogIntensity: 0
     - _AnimatedFogScale: 2.1
-    - _BloomIntensity: 0.58
-    - _BloomThreshold: 0.33
+    - _BloomIntensity: 0.39
+    - _BloomThreshold: 0.348
     - _ColorSigma: 0.378
     - _Contrast: 1.007
-    - _DepthSigma: 0.058
+    - _DepthSigma: 0.065
     - _Exposure: 0.07
-    - _FilmGrainIntensity: 0.017
+    - _FilmGrainIntensity: 0.01
     - _JitterIntensity: 0.0009
     - _JitterSpeed: 2
     - _LensDirtIntensity: 1.79
-    - _LensFogIntensity: 0.209
+    - _LensFogIntensity: 0.093
     - _RadialBlurStrength: 0.0087
-    - _SSSIntensity: 0.35
-    - _SSSRadius: 6.32
+    - _SSSIntensity: 1
+    - _SSSRadius: 4
     - _Saturation: 0.291
     - _ScanlineCount: 400
     - _ScanlineIntensity: 0.017
-    - _SpatialSigma: 2.21
+    - _SpatialSigma: 2.5
     - _VignetteIntensity: 1.47
     - _VignetteSmoothness: 0.47
     m_Colors:

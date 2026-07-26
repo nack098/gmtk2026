@@ -72,7 +72,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 {
                     rb.isKinematic = true;
                     rb.useGravity = false;
-                    rb.velocity = Vector3.zero;
+                    rb.linearVelocity = Vector3.zero;
                     rb.angularVelocity = Vector3.zero;
                 }
             }
@@ -165,7 +165,7 @@ namespace TrashCount.Gameplay.TrashSystem
             if (_rigidbody != null)
             {
                 _rigidbody.isKinematic = true;
-                _rigidbody.velocity = Vector3.zero;
+                _rigidbody.linearVelocity = Vector3.zero;
                 _rigidbody.angularVelocity = Vector3.zero;
             }
 
@@ -220,7 +220,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 transform.position = recoverPos;
                 if (_rigidbody != null)
                 {
-                    _rigidbody.velocity = Vector3.zero;
+                    _rigidbody.linearVelocity = Vector3.zero;
                     _rigidbody.angularVelocity = Vector3.zero;
                 }
                 Debug.LogWarning($"[PushCart] Cart fell below world! Teleported back to safety at {recoverPos}");
