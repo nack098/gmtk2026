@@ -3527,16 +3527,16 @@ MonoBehaviour:
   cullingShader: {fileID: 7200000, guid: 8a6a25fbfa4e4784193c7b3f610e054a, type: 3}
   grassMaterial: {fileID: 2100000, guid: 256d7b690833d2246b7f935615bd2fd7, type: 2}
   targetCamera: {fileID: 330585545}
-  grassMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  grassMesh: {fileID: -2786560477915895171, guid: e17211b179c4d5f42a41d4315e01e3a2, type: 3}
   gridDimensions: {x: 4, y: 4}
   centerMeshOrigin: 1
-  maxGrassPerChunk: 10000
-  spawnDecayRate: 1.8
-  heightLimitCutoff: 0.477
-  flatlandBias: 0.796
+  maxGrassPerChunk: 2500
+  spawnDecayRate: 2.95
+  heightLimitCutoff: 0.283
+  flatlandBias: 0.812
   useBetaClustering: 1
-  betaAlpha: 2.52
-  betaBeta: 2.88
+  betaAlpha: 1.32
+  betaBeta: 1.89
   baseScale: {x: 0.01, y: 0.01}
   scaleRandomness: {x: 0.1, y: 0.1}
   boundingRadius: 1
@@ -3570,7 +3570,7 @@ MonoBehaviour:
   - name: Test4
     mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
     material: {fileID: 2100000, guid: a630937187b0dfb44a145cb83cdba78b, type: 2}
-  _scrapDensityGrid: 100
+  _scrapDensityGrid: 50
   _basePoissonLambda: 10
   _positionJitter: 0.7
   _scaleRange: {x: 0.15, y: 0.15}
