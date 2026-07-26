@@ -15,14 +15,14 @@ struct ScrapInstanceData
 
 // --- Hi-Z Downsampling Resources ---
 Texture2D<float> _InputSource;
-RWTexture2D<float> _OutputMip;
+Texture2D<float> _InputMip;        // Separate Read Handle for Sub-Mips
+RWTexture2D<float> _OutputMip;     // Separate Write Handle for Sub-Mips
 int2 _OutputSize;
 
 // --- Culling & Indirect Resources ---
 StructuredBuffer<ScrapInstanceData> _AllInstancesBuffer;
 RWStructuredBuffer<ScrapInstanceData> _CulledInstancesBuffer;
 RWStructuredBuffer<uint> _GlobalArgsBuffer;
-RWStructuredBuffer<uint> _CounterBuffer;
 
 matrix _VPMatrix;
 float4 _FrustumPlanes[6];
@@ -32,12 +32,14 @@ float _BoundingRadius;
 int _TotalInstances;
 int _MaxInstancesPerType;
 int _ScrapTypeCount;
-float _ScreenWidth; // WebGPU-safe explicit screen width uniform
+float _ScreenWidth;  
+float _ScreenHeight; 
 
 Texture2D<float> _HiZBuffer;
 SamplerState sampler_PointClamp;
 
-// --- Hi-Z Kernels ---
+// --- Hi-Z Downsampling Kernels (Reversed-Z Conservative) ---
+
 [numthreads(8, 8, 1)]
 void K_DownsampleMip0(uint3 id : SV_DispatchThreadID)
 {
@@ -49,8 +51,9 @@ void K_DownsampleMip0(uint3 id : SV_DispatchThreadID)
     float d2 = _InputSource[baseCoords + int2(0, 1)];
     float d3 = _InputSource[baseCoords + int2(1, 1)];
 
-    float minDepth = min(min(d0, d1), min(d2, d3));
-    _OutputMip[id.xy] = minDepth;
+    // Conservative Reversed-Z: MIN depth guarantees no premature false-culling!
+    float conservativeDepth = min(min(d0, d1), min(d2, d3));
+    _OutputMip[id.xy] = conservativeDepth;
 }
 
 [numthreads(8, 8, 1)]
@@ -59,16 +62,18 @@ void K_DownsampleMips(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)_OutputSize.x || id.y >= (uint)_OutputSize.y) return;
 
     int2 baseCoords = id.xy * 2;
-    float d0 = _OutputMip[baseCoords + int2(0, 0)];
-    float d1 = _OutputMip[baseCoords + int2(1, 0)];
-    float d2 = _OutputMip[baseCoords + int2(0, 1)];
-    float d3 = _OutputMip[baseCoords + int2(1, 1)];
+    float d0 = _InputMip[baseCoords + int2(0, 0)];
+    float d1 = _InputMip[baseCoords + int2(1, 0)];
+    float d2 = _InputMip[baseCoords + int2(0, 1)];
+    float d3 = _InputMip[baseCoords + int2(1, 1)];
 
-    float minDepth = min(min(d0, d1), min(d2, d3));
-    _OutputMip[id.xy] = minDepth;
+    // Conservative Reversed-Z: MIN depth across mips!
+    float conservativeDepth = min(min(d0, d1), min(d2, d3));
+    _OutputMip[id.xy] = conservativeDepth;
 }
 
 // --- Culling Kernels ---
+
 [numthreads(64, 1, 1)]
 void ResetIndexBatch(uint3 id : SV_DispatchThreadID)
 {
@@ -100,27 +105,49 @@ void CullingBatch(uint3 id : SV_DispatchThreadID)
         if (distanceToPlane < -maxRadius) return;
     }
 
-    // 3. Hi-Z Occlusion Culling
+    // 3. Conservative Hi-Z Occlusion Culling
     float4 clipPos = mul(_VPMatrix, float4(pos, 1.0));
+    
     if (clipPos.w > 0.0)
     {
-        float3 ndc = clipPos.xyz / clipPos.w;
-        float2 screenUV = ndc.xy * 0.5 + 0.5;
+        // Compute Clip-Space Extents
+        float4 clipMin = mul(_VPMatrix, float4(pos - float3(maxRadius, maxRadius, maxRadius), 1.0));
+        float4 clipMax = mul(_VPMatrix, float4(pos + float3(maxRadius, maxRadius, maxRadius), 1.0));
 
-        if (screenUV.x >= 0.0 && screenUV.x <= 1.0 && screenUV.y >= 0.0 && screenUV.y <= 1.0)
+        float3 ndcMin = clipMin.xyz / max(clipMin.w, 0.0001);
+        float3 ndcMax = clipMax.xyz / max(clipMax.w, 0.0001);
+
+        float2 uvMin = clamp(min(ndcMin.xy, ndcMax.xy) * 0.5 + 0.5, 0.0, 1.0);
+        float2 uvMax = clamp(max(ndcMin.xy, ndcMax.xy) * 0.5 + 0.5, 0.0, 1.0);
+
+        // In Reversed-Z, MIN depth is furthest away from camera
+        float instanceFurthestDepth = min(ndcMin.z, ndcMax.z);
+
+        // Screen footprint size in pixels
+        float2 pixelSize = (uvMax - uvMin) * float2(_ScreenWidth, _ScreenHeight);
+        float maxPixelSize = max(pixelSize.x, pixelSize.y);
+
+        // Mip level calculation with safety clamp against negative/NaN
+        float mipLevel = clamp(floor(log2(max(maxPixelSize, 1.0))), 0.0, 7.0);
+
+        // Sample 4 corners of bounding box
+        float4 samples;
+        samples.x = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMin, mipLevel);
+        samples.y = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMax.x, uvMin.y), mipLevel);
+        samples.z = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMin.x, uvMax.y), mipLevel);
+        samples.w = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMax, mipLevel);
+
+        // Maximum sampled Hi-Z depth represents the nearest surface in Reversed-Z
+        float nearestHiZDepth = max(max(samples.x, samples.y), max(samples.z, samples.w));
+
+        // Occlusion Test (Reversed-Z: If instance depth is lower than closest occluder depth, it is occluded!)
+        if (instanceFurthestDepth < nearestHiZDepth)
         {
-            float screenFootprint = max(maxRadius / clipPos.w * _ScreenWidth, 1.0);
-            float mipLevel = clamp(log2(screenFootprint), 0.0, 7.0);
-
-            float hiZDepth = _HiZBuffer.SampleLevel(sampler_PointClamp, screenUV, (int)mipLevel);
-            if (ndc.z < hiZDepth)
-            {
-                // return; // Uncomment when Hi-Z input texture is actively bound
-            }
+            return; // Occluded!
         }
     }
 
-    // 4. Append to Buffer
+    // 4. Append Instance
     uint writeOffset;
     InterlockedAdd(_GlobalArgsBuffer[typeIndex * 5 + 1], 1, writeOffset);
 

@@ -15,12 +15,12 @@ public struct ScrapTypeConfig
 [StructLayout(LayoutKind.Sequential)]
 public struct ScrapInstanceData
 {
-    public float id;          
-    public Vector3 rotation;  
-    public Vector2 scale;     
-    public Vector3 position;  
-    public Vector3 normal;    
-    public float pad;         
+    public float id;
+    public Vector3 rotation;
+    public Vector2 scale;
+    public Vector3 position;
+    public Vector3 normal;
+    public float pad;
 }
 
 [DisallowMultipleComponent]
@@ -34,6 +34,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
     [SerializeField] private TerrainGenerator _terrainGenerator;
     [SerializeField] private HeightMapToMesh _visualizer;
     [SerializeField] private Camera _targetCamera;
+    [SerializeField] private HiZGenerator _hiZGenerator;
 
     [Header("Scrap Mesh Variations")]
     [SerializeField] private ScrapTypeConfig[] _scrapTypes;
@@ -61,7 +62,6 @@ public class GpuJunkyardPopulator : MonoBehaviour
     private GraphicsBuffer _culledInstancesBuffer;
     private GraphicsBuffer _globalArgsBuffer;
     private GraphicsBuffer _counterBuffer;
-    private RenderTexture _hiZTexture;
 
     private RenderParams[] _renderParamsList;
     private readonly Vector4[] _frustumPlanes = new Vector4[6];
@@ -69,7 +69,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
     private int _scatterKernel;
     private int _resetKernel;
     private int _cullKernel;
-    
+
     private int _maxInstanceCapacity;
     private int _maxInstancesPerType;
     private bool _isInitialized = false;
@@ -80,6 +80,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
     private static readonly int CameraPositionID = Shader.PropertyToID("_CameraPosition");
     private static readonly int HiZBufferID = Shader.PropertyToID("_HiZBuffer");
     private static readonly int ScreenWidthID = Shader.PropertyToID("_ScreenWidth");
+    private static readonly int ScreenHeightID = Shader.PropertyToID("_ScreenHeight");
 
     private void OnDisable() => ReleaseBuffers();
     private void OnDestroy() => ReleaseBuffers();
@@ -103,8 +104,8 @@ public class GpuJunkyardPopulator : MonoBehaviour
         float heightScale = _visualizer != null ? _visualizer.HeightScale : 15.0f;
 
         _maxInstanceCapacity = _scrapDensityGrid * _scrapDensityGrid * 8;
-        _maxInstancesPerType = _maxInstanceCapacity; 
-        
+        _maxInstancesPerType = _maxInstanceCapacity;
+
         int instanceStride = Marshal.SizeOf<ScrapInstanceData>();
         int totalCapacity = _maxInstancesPerType * _scrapTypes.Length;
 
@@ -113,19 +114,10 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _counterBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, sizeof(uint));
         _counterBuffer.SetData(new uint[] { 0 });
 
-        _hiZTexture = new RenderTexture(512, 512, 0, RenderTextureFormat.RFloat)
-        {
-            useMipMap = true,
-            autoGenerateMips = false,
-            enableRandomWrite = true,
-            filterMode = FilterMode.Point
-        };
-        _hiZTexture.Create();
-
         int totalUintCount = _scrapTypes.Length * 5;
         _globalArgsBuffer = new GraphicsBuffer(
-            GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Structured, 
-            totalUintCount, 
+            GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Structured,
+            totalUintCount,
             sizeof(uint)
         );
 
@@ -143,7 +135,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
 
             int argsOffset = i * 5;
             initialArgs[argsOffset + 0] = _scrapTypes[i].mesh.GetIndexCount(0);
-            initialArgs[argsOffset + 1] = 0; 
+            initialArgs[argsOffset + 1] = 0;
             initialArgs[argsOffset + 2] = _scrapTypes[i].mesh.GetIndexStart(0);
             initialArgs[argsOffset + 3] = _scrapTypes[i].mesh.GetBaseVertex(0);
             initialArgs[argsOffset + 4] = 0;
@@ -160,7 +152,7 @@ public class GpuJunkyardPopulator : MonoBehaviour
         }
         _globalArgsBuffer.SetData(initialArgs);
 
-        // 1. DISPATCH SCATTER PASS FIRST TO FILL _allInstancesBuffer
+        // DISPATCH SCATTER PASS
         _scatterComputeShader.SetTexture(_scatterKernel, "_HeightMap", _terrainGenerator.FinalHeightMapRT);
         _scatterComputeShader.SetBuffer(_scatterKernel, "_InstanceBuffer", _allInstancesBuffer);
         _scatterComputeShader.SetBuffer(_scatterKernel, "_CounterBuffer", _counterBuffer);
@@ -189,33 +181,30 @@ public class GpuJunkyardPopulator : MonoBehaviour
             var data = request.GetData<ScrapInstanceData>();
             CachedInstances = data.ToArray();
             IsDataReady = true;
-
-            if (TryGetComponent(out GpuJunkyardColliderPool pool))
-            {
-                pool.UpdateProximityColliders();
-            }
         });
     }
 
     private void Update()
     {
-        if (!_isInitialized || _cullingComputeShader == null) return;
-        if (_targetCamera == null) return;
+        if (!_isInitialized || _cullingComputeShader == null || _targetCamera == null) return;
 
+        // 1. Calculate Frustum Planes
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_targetCamera);
         for (int i = 0; i < 6; i++)
         {
             _frustumPlanes[i] = new Vector4(planes[i].normal.x, planes[i].normal.y, planes[i].normal.z, planes[i].distance);
         }
 
-        Matrix4x4 vpMatrix = GL.GetGPUProjectionMatrix(_targetCamera.projectionMatrix, false) * _targetCamera.worldToCameraMatrix;
+        // 2. Correct VP Matrix calculation respecting graphics API platform flipping
+        Matrix4x4 gpuProj = GL.GetGPUProjectionMatrix(_targetCamera.projectionMatrix, SystemInfo.graphicsUVStartsAtTop);
+        Matrix4x4 vpMatrix = gpuProj * _targetCamera.worldToCameraMatrix;
 
-        // 1. Reset Arguments
+        // 3. Reset Arguments
         _cullingComputeShader.SetBuffer(_resetKernel, "_GlobalArgsBuffer", _globalArgsBuffer);
         _cullingComputeShader.SetInt("_ScrapTypeCount", _scrapTypes.Length);
         _cullingComputeShader.Dispatch(_resetKernel, Mathf.Max(1, Mathf.CeilToInt(_scrapTypes.Length / 64.0f)), 1, 1);
 
-        // 2. Culling Pass
+        // 4. Culling Pass
         _cullingComputeShader.SetMatrix(VPMatrixID, vpMatrix);
         _cullingComputeShader.SetVectorArray(FrustumPlanesID, _frustumPlanes);
         _cullingComputeShader.SetVector(CameraPositionID, _targetCamera.transform.position);
@@ -224,18 +213,24 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _cullingComputeShader.SetInt("_TotalInstances", _maxInstanceCapacity);
         _cullingComputeShader.SetInt("_MaxInstancesPerType", _maxInstancesPerType);
         _cullingComputeShader.SetInt("_ScrapTypeCount", _scrapTypes.Length);
-        _cullingComputeShader.SetFloat(ScreenWidthID, (float)Screen.width);
-        
+
+        // Feed real screen dimensions to Compute Shader
+        _cullingComputeShader.SetFloat(ScreenWidthID, (float)_targetCamera.pixelWidth);
+        _cullingComputeShader.SetFloat(ScreenHeightID, (float)_targetCamera.pixelHeight);
+
         _cullingComputeShader.SetBuffer(_cullKernel, "_AllInstancesBuffer", _allInstancesBuffer);
         _cullingComputeShader.SetBuffer(_cullKernel, "_CulledInstancesBuffer", _culledInstancesBuffer);
         _cullingComputeShader.SetBuffer(_cullKernel, "_GlobalArgsBuffer", _globalArgsBuffer);
         _cullingComputeShader.SetBuffer(_cullKernel, "_CounterBuffer", _counterBuffer);
-        _cullingComputeShader.SetTexture(_cullKernel, HiZBufferID, _hiZTexture != null ? (Texture)_hiZTexture : Texture2D.whiteTexture);
+
+        // FIX: Safe fallback is BLACK texture (0.0 depth = No Occlusion in Reversed-Z)
+        Texture activeHiZ = (_hiZGenerator != null && _hiZGenerator.HiZTexture != null) ? (Texture)_hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        _cullingComputeShader.SetTexture(_cullKernel, HiZBufferID, activeHiZ);
 
         int cullThreadGroups = Mathf.Max(1, Mathf.CeilToInt(_maxInstanceCapacity / 64.0f));
         _cullingComputeShader.Dispatch(_cullKernel, cullThreadGroups, 1, 1);
 
-        // 3. Render Indirect
+        // 5. Render Indirect (FIX: Command Buffer Offset aligned by 5 uints per scrap type)
         for (int i = 0; i < _scrapTypes.Length; i++)
         {
             Graphics.RenderMeshIndirect(_renderParamsList[i], _scrapTypes[i].mesh, _globalArgsBuffer, 1, i);
@@ -248,7 +243,6 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _culledInstancesBuffer?.Release();
         _globalArgsBuffer?.Release();
         _counterBuffer?.Release();
-        if (_hiZTexture != null) { _hiZTexture.Release(); _hiZTexture = null; }
 
         _allInstancesBuffer = null;
         _culledInstancesBuffer = null;

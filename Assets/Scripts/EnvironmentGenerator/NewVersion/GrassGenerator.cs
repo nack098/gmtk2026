@@ -26,6 +26,7 @@ public class GrassGeneratorBatched : MonoBehaviour
     [SerializeField] private Material grassMaterial;
     [SerializeField] private Camera targetCamera;
     [SerializeField] private Mesh grassMesh;
+    [SerializeField] private HiZGenerator hiZGenerator; // <-- Added Hi-Z Depth Generator
 
     [Header("Chunk Grid Batching")]
     [SerializeField] private Vector2Int gridDimensions = new Vector2Int(4, 4);
@@ -72,7 +73,10 @@ public class GrassGeneratorBatched : MonoBehaviour
 
     private static readonly int VPMatrixID = Shader.PropertyToID("_VPMatrix");
     private static readonly int HiZBufferID = Shader.PropertyToID("_HiZBuffer");
-    private uint[] debugArgsArray = new uint[5];
+    private static readonly int ScreenWidthID = Shader.PropertyToID("_ScreenWidth");
+    private static readonly int ScreenHeightID = Shader.PropertyToID("_ScreenHeight");
+    private static readonly int CameraPositionID = Shader.PropertyToID("_CameraPosition");
+    private static readonly int FrustumPlanesID = Shader.PropertyToID("_FrustumPlanes");
     #endregion
 
     private void Awake()
@@ -197,34 +201,47 @@ public class GrassGeneratorBatched : MonoBehaviour
         grassMaterial.SetBuffer("_DataBuffer", culledInstancesBuffer);
         isInitialized = true;
 
-        Debug.Log($"<color=lime>[GrassGeneratorBatched]</color> Successfully initialized grass covering {actualTerrainWidth}x{actualTerrainWidth} units!");
+        if (enableDebugConsoleLog)
+        {
+            Debug.Log($"<color=lime>[GrassGeneratorBatched]</color> Successfully initialized grass covering {actualTerrainWidth}x{actualTerrainWidth} units!");
+        }
     }
 
     private void Update()
     {
         if (!isInitialized || targetCamera == null) return;
 
+        // 1. Calculate Frustum Planes
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(targetCamera);
         for (int i = 0; i < 6; ++i)
         {
             frustumPlanes[i] = new Vector4(planes[i].normal.x, planes[i].normal.y, planes[i].normal.z, planes[i].distance);
         }
 
-        Matrix4x4 vpMatrix = GL.GetGPUProjectionMatrix(targetCamera.projectionMatrix, false) * targetCamera.worldToCameraMatrix;
+        // 2. Correct Projection Matrix with Platform UV Flipping
+        Matrix4x4 gpuProj = GL.GetGPUProjectionMatrix(targetCamera.projectionMatrix, SystemInfo.graphicsUVStartsAtTop);
+        Matrix4x4 vpMatrix = gpuProj * targetCamera.worldToCameraMatrix;
         int threadGroups = Mathf.CeilToInt(totalMaxGrass / 64.0f);
 
+        // 3. Reset Counter / Instance Count in Argument Buffer
         cullingShader.SetBuffer(resetKernel, "_GlobalArgsBuffer", argumentsBuffer);
         cullingShader.SetInt("_ScrapTypeCount", 1);
         cullingShader.Dispatch(resetKernel, 1, 1, 1);
 
+        // 4. Pass Uniforms to Culling Kernel
         cullingShader.SetMatrix(VPMatrixID, vpMatrix);
-        cullingShader.SetTexture(cullingKernel, HiZBufferID, Texture2D.whiteTexture);
-
-        cullingShader.SetVectorArray("_FrustumPlanes", frustumPlanes);
-        cullingShader.SetVector("_CameraPosition", targetCamera.transform.position);
+        cullingShader.SetVectorArray(FrustumPlanesID, frustumPlanes);
+        cullingShader.SetVector(CameraPositionID, targetCamera.transform.position);
         cullingShader.SetFloat("_MaxDrawDistance", maxDrawDistance);
         cullingShader.SetFloat("_FadeDistance", fadeDistance);
-        cullingShader.SetFloat("_ScreenWidth", targetCamera.pixelWidth);
+
+        // Feed real screen dimensions to Compute Shader
+        cullingShader.SetFloat(ScreenWidthID, (float)targetCamera.pixelWidth);
+        cullingShader.SetFloat(ScreenHeightID, (float)targetCamera.pixelHeight);
+
+        // FIX: Fall back to BLACK texture (0.0 depth = No Occlusion in Reversed-Z)
+        Texture activeHiZ = (hiZGenerator != null && hiZGenerator.HiZTexture != null) ? (Texture)hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        cullingShader.SetTexture(cullingKernel, HiZBufferID, activeHiZ);
 
         cullingShader.SetBuffer(cullingKernel, "_GlobalArgsBuffer", argumentsBuffer);
         cullingShader.SetBuffer(cullingKernel, "_AllInstancesBuffer", allInstancesBuffer);
@@ -235,8 +252,9 @@ public class GrassGeneratorBatched : MonoBehaviour
         cullingShader.SetInt("_ScrapTypeCount", 1);
         cullingShader.SetFloat("_BoundingRadius", boundingRadius);
 
+        // 5. Dispatch Culling & Render Indirect
         cullingShader.Dispatch(cullingKernel, threadGroups, 1, 1);
-        Graphics.RenderMeshIndirect(renderParams, grassMesh, argumentsBuffer);
+        Graphics.RenderMeshIndirect(renderParams, grassMesh, argumentsBuffer, 1, 0);
     }
 
     private void OnDisable() => ReleaseBuffers();
