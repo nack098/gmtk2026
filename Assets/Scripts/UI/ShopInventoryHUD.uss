@@ -1,0 +1,147 @@
+#shop-hud-root {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    /* SHIFTED TO LEFT: align items to flex-start instead of center */
+    justify-content: center;
+    align-items: flex-start;
+    padding-left: 5%; /* Gives offset from left screen edge so it doesn't block character */
+    padding-top: 32px;
+    padding-bottom: 32px;
+}
+
+#main-panel {
+    flex-direction: row;
+    background-color: rgba(14, 18, 16, 0.88);
+    border-width: 1px;
+    border-color: rgba(60, 70, 62, 0.5);
+    border-radius: 8px;
+    padding: 16px;
+    max-height: 80%;
+}
+
+.hud-column {
+    width: 220px;
+    margin-left: 8px;
+    margin-right: 8px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+#section-shop {
+    position: relative; /* Anchor for the absolute drop-overlay */
+}
+
+/* HEADER WITH SUBTITLE */
+.header-container {
+    flex-direction: row;
+    align-items: baseline;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(164, 184, 157, 0.2);
+}
+
+.column-header-title {
+    color: #A4B89D;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.column-header-subtitle {
+    color: #6E7E69;
+    font-size: 10px;
+    margin-left: 6px;
+    padding: 0px;
+    -unity-font-style: italic;
+}
+
+/* STANDARD SINGLE HEADER (FOR CART & INVENTORY) */
+.column-header {
+    color: #A4B89D;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(164, 184, 157, 0.2);
+}
+
+/* LIST CONTAINER */
+.item-list-container {
+    flex-grow: 1;
+    min-height: 260px;
+    max-height: 400px;
+}
+
+/* COMPACT ITEM ROW */
+.item-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.item-row:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(164, 184, 157, 0.4);
+}
+
+.item-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: #A03030;
+    border-radius: 3px;
+}
+
+.item-title {
+    color: #E0E8DC;
+    font-size: 12px;
+    flex-grow: 1;
+    -unity-text-align: middle-left;
+}
+
+.item-cost {
+    color: #D2A04C;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+/* DROP OVERLAY FOR SELLING */
+.drop-overlay {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    background-color: rgba(20, 35, 25, 0.92);
+    border-width: 2px;
+    border-color: #A4B89D;
+    border-radius: 6px;
+    justify-content: center;
+    align-items: center;
+}
+
+.drop-overlay-text {
+    color: #A4B89D;
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    -unity-text-align: middle-center;
+}
+
+.hidden {
+    display: none;
+}
