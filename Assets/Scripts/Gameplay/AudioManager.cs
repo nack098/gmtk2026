@@ -33,6 +33,13 @@ public class AudioManager : MonoBehaviour
     [Tooltip("AudioMixerGroup สำหรับ SFX pool")]
     public AudioMixerGroup sfxGroup;
 
+    [Header("Audio Sources (Optional Inspector Assign)")]
+    [Tooltip("AudioSource สำหรับ BGM/Music (ถ้าไม่ลากใส่จะ Auto-Create ให้อัตโนมัติ)")]
+    public AudioSource musicSource;
+
+    [Tooltip("AudioSource สำหรับ SFX หลัก/แม่แบบ (ถ้าไม่ลากใส่จะ Auto-Create ให้อัตโนมัติ)")]
+    public AudioSource sfxSource;
+
     [Header("SFX Pool")]
     [Tooltip("จำนวน AudioSource ใน pool — เพิ่มถ้ามี SFX overlap เยอะ")]
     public int sfxPoolSize = 16;
@@ -59,7 +66,6 @@ public class AudioManager : MonoBehaviour
     // ── Runtime state ─────────────────────────────────────────────────────
     AudioSource[] sfxPool;
     int           poolIdx;
-    AudioSource   musicSource;
 
     // Mixer params ที่ exposed จริง ใน assigned mixer — set ใน Awake (ValidateMixerParams)
     // ถ้า user ไม่ได้ expose ตามชื่อมาตรฐาน → param หายไปจาก set → ApplyMixerVolume skip
@@ -112,25 +118,44 @@ public class AudioManager : MonoBehaviour
         sfxPool = new AudioSource[Mathf.Max(1, sfxPoolSize)];
         for (int i = 0; i < sfxPool.Length; i++)
         {
-            var go = new GameObject($"SfxPool_{i}");
-            go.transform.SetParent(transform);
-            var src = go.AddComponent<AudioSource>();
-            src.playOnAwake          = false;
-            src.spatialBlend         = 1f;
-            src.outputAudioMixerGroup = sfxGroup;
-            sfxPool[i] = src;
+            if (i == 0 && sfxSource != null)
+            {
+                sfxPool[i] = sfxSource;
+                if (sfxGroup != null) sfxSource.outputAudioMixerGroup = sfxGroup;
+            }
+            else
+            {
+                var go = new GameObject($"SfxPool_{i}");
+                go.transform.SetParent(transform);
+                var src = go.AddComponent<AudioSource>();
+                if (sfxSource != null)
+                {
+                    src.priority = sfxSource.priority;
+                    src.pitch = sfxSource.pitch;
+                    src.minDistance = sfxSource.minDistance;
+                    src.maxDistance = sfxSource.maxDistance;
+                    src.rolloffMode = sfxSource.rolloffMode;
+                }
+                src.playOnAwake = false;
+                src.spatialBlend = 1f;
+                if (sfxGroup != null) src.outputAudioMixerGroup = sfxGroup;
+                sfxPool[i] = src;
+            }
         }
     }
 
     void BuildMusicSource()
     {
-        var go = new GameObject("MusicSource");
-        go.transform.SetParent(transform);
-        musicSource = go.AddComponent<AudioSource>();
-        musicSource.playOnAwake          = false;
-        musicSource.loop                 = true;
-        musicSource.spatialBlend         = 0f;   // 2D
-        musicSource.outputAudioMixerGroup = musicGroup;
+        if (musicSource == null)
+        {
+            var go = new GameObject("MusicSource");
+            go.transform.SetParent(transform);
+            musicSource = go.AddComponent<AudioSource>();
+        }
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.spatialBlend = 0f;   // 2D
+        if (musicGroup != null) musicSource.outputAudioMixerGroup = musicGroup;
     }
 
     // ── Public API: SFX ───────────────────────────────────────────────────

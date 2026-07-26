@@ -2,6 +2,7 @@ using UnityEngine;
 using TrashCount.Data;
 using TrashCount.Data.Models;
 using TrashCount.Gameplay.Phases;
+using TrashCount.Gameplay.Phases.UI;
 using TrashCount.Gameplay.TrashSystem;
 
 namespace TrashCount.Gameplay
@@ -14,6 +15,7 @@ namespace TrashCount.Gameplay
         private PlayerInteraction _playerInteraction;
         private PushCart _pushCart;
         private ShopSystem _shopSystem;
+        private ShoppingPhaseUI _shoppingPhaseUI;
         private HungerSystem _hungerSystem;
         private Playstat _playstat;
 
@@ -29,10 +31,17 @@ namespace TrashCount.Gameplay
             UnsubscribeFromSceneComponents();
         }
 
+        private IGamePhaseState _lastPlayedPhase;
+
         private void Start()
         {
             // Re-bind in Start to ensure components instantiated at runtime are captured
             SubscribeToSceneComponents();
+
+            if (GamePhaseManager.Instance != null && GamePhaseManager.Instance.CurrentPhase != null)
+            {
+                HandlePhaseChanged(GamePhaseManager.Instance.CurrentPhase);
+            }
         }
 
         private void SubscribeToManagers()
@@ -85,21 +94,32 @@ namespace TrashCount.Gameplay
                 _shopSystem.OnTransactionFailed += HandleTransactionFailed;
             }
 
-            // 4. Hunger System
+            // 4. Shopping Phase UI
+            _shoppingPhaseUI = ShoppingPhaseUI.Instance != null ? ShoppingPhaseUI.Instance : FindAnyObjectByType<ShoppingPhaseUI>();
+            if (_shoppingPhaseUI != null)
+            {
+                _shoppingPhaseUI.OnItemPurchased += HandleUIItemPurchased;
+                _shoppingPhaseUI.OnItemSold += HandleUIItemSold;
+                _shoppingPhaseUI.OnItemConsumed += HandleUIItemConsumed;
+                _shoppingPhaseUI.OnItemStoredInInventory += HandleUIItemStoredInInventory;
+                _shoppingPhaseUI.OnTransactionFailed += HandleTransactionFailed;
+            }
+
+            // 5. Hunger System
             _hungerSystem = FindAnyObjectByType<HungerSystem>();
             if (_hungerSystem != null)
             {
                 _hungerSystem.OnHungerStateChanged += HandleHungerStateChanged;
             }
 
-            // 5. Playstat
+            // 6. Playstat
             _playstat = FindAnyObjectByType<Playstat>();
             if (_playstat != null)
             {
                 _playstat.OnStaminaExhausted += HandleStaminaExhausted;
             }
 
-            // 6. Trash Containers in scene
+            // 7. Trash Containers in scene
             var trashContainers = FindObjectsByType<TrashContainer>(FindObjectsSortMode.None);
             foreach (var container in trashContainers)
             {
@@ -108,6 +128,9 @@ namespace TrashCount.Gameplay
                 container.OnItemRummaged += HandleTrashItemRummaged;
                 container.OnRummageEmpty += HandleTrashRummageEmpty;
             }
+
+            // 8. Automatically Hook UI Buttons for Click SFX
+            HookAllButtonsInScene();
         }
 
         private void UnsubscribeFromSceneComponents()
@@ -133,6 +156,15 @@ namespace TrashCount.Gameplay
                 _shopSystem.OnTransactionFailed -= HandleTransactionFailed;
             }
 
+            if (_shoppingPhaseUI != null)
+            {
+                _shoppingPhaseUI.OnItemPurchased -= HandleUIItemPurchased;
+                _shoppingPhaseUI.OnItemSold -= HandleUIItemSold;
+                _shoppingPhaseUI.OnItemConsumed -= HandleUIItemConsumed;
+                _shoppingPhaseUI.OnItemStoredInInventory -= HandleUIItemStoredInInventory;
+                _shoppingPhaseUI.OnTransactionFailed -= HandleTransactionFailed;
+            }
+
             if (_hungerSystem != null)
             {
                 _hungerSystem.OnHungerStateChanged -= HandleHungerStateChanged;
@@ -151,6 +183,35 @@ namespace TrashCount.Gameplay
                 container.OnItemRummaged -= HandleTrashItemRummaged;
                 container.OnRummageEmpty -= HandleTrashRummageEmpty;
             }
+
+            UnhookAllButtonsInScene();
+        }
+
+        private void HookAllButtonsInScene()
+        {
+            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var btn in buttons)
+            {
+                if (btn == null) continue;
+                btn.onClick.RemoveListener(PlayUIClickSFX);
+                btn.onClick.AddListener(PlayUIClickSFX);
+            }
+        }
+
+        private void UnhookAllButtonsInScene()
+        {
+            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var btn in buttons)
+            {
+                if (btn == null) continue;
+                btn.onClick.RemoveListener(PlayUIClickSFX);
+            }
+        }
+
+        public void PlayUIClickSFX()
+        {
+            if (sfxConfig == null) return;
+            AudioManager.Instance.PlayRandomSfx2D(sfxConfig.uiClick);
         }
 
         // ── Handlers ─────────────────────────────────────────────────────────────
@@ -216,10 +277,34 @@ namespace TrashCount.Gameplay
             AudioManager.Instance.PlayRandomSfx2D(sfxConfig.shopBuy);
         }
 
+        private void HandleUIItemPurchased(ItemModel model)
+        {
+            if (sfxConfig == null) return;
+            AudioManager.Instance.PlayRandomSfx2D(sfxConfig.shopBuy);
+        }
+
         private void HandleItemSold(ItemState state, int quantity, long totalRevenue)
         {
             if (sfxConfig == null) return;
             AudioManager.Instance.PlayRandomSfx2D(sfxConfig.shopSell);
+        }
+
+        private void HandleUIItemSold(ItemModel model)
+        {
+            if (sfxConfig == null) return;
+            AudioManager.Instance.PlayRandomSfx2D(sfxConfig.shopSell);
+        }
+
+        private void HandleUIItemConsumed(ItemModel model)
+        {
+            if (sfxConfig == null) return;
+            AudioManager.Instance.PlayRandomSfx2D(sfxConfig.itemConsume);
+        }
+
+        private void HandleUIItemStoredInInventory(ItemModel model)
+        {
+            if (sfxConfig == null) return;
+            AudioManager.Instance.PlayRandomSfx2D(sfxConfig.itemPickUp);
         }
 
         private void HandleTransactionFailed()
@@ -246,10 +331,14 @@ namespace TrashCount.Gameplay
         private void HandlePhaseChanged(IGamePhaseState phase)
         {
             if (sfxConfig == null || phase == null) return;
+            if (phase == _lastPlayedPhase) return;
+            _lastPlayedPhase = phase;
+
             if (phase is ShoppingPhase)
             {
                 AudioManager.Instance.PlayRandomSfx2D(sfxConfig.dayEndBell);
             }
+            HookAllButtonsInScene();
         }
 
         private void HandleGameOver()

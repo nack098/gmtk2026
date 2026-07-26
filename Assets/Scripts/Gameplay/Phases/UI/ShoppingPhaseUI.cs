@@ -12,6 +12,12 @@ namespace TrashCount.Gameplay.Phases.UI
     {
         public static ShoppingPhaseUI Instance { get; private set; }
 
+        public event System.Action<ItemModel> OnItemPurchased;
+        public event System.Action<ItemModel> OnItemSold;
+        public event System.Action<ItemModel> OnItemConsumed;
+        public event System.Action<ItemModel> OnItemStoredInInventory;
+        public event System.Action OnTransactionFailed;
+
         [Header("Shopping Panel Reference")]
         [SerializeField] private GameObject shoppingPanel;
 
@@ -457,12 +463,14 @@ namespace TrashCount.Gameplay.Phases.UI
                 if (success)
                 {
                     SetStatusMessage("Item purchased successfully!");
+                    OnItemPurchased?.Invoke(item);
                     // Re-stock Buy Zone shelf
                     PopulateBuyZone();
                 }
                 else
                 {
                     SetStatusMessage("Cannot buy item! (Not enough money)");
+                    OnTransactionFailed?.Invoke();
                     return;
                 }
             }
@@ -480,6 +488,7 @@ namespace TrashCount.Gameplay.Phases.UI
                 }
 
                 _currentShoppingPhase.SellItem(item);
+                OnItemSold?.Invoke(item);
                 SetStatusMessage($"Sold item for ${item.SellPrice}!");
                 Destroy(dragItem.gameObject);
                 return;
@@ -493,7 +502,12 @@ namespace TrashCount.Gameplay.Phases.UI
                     GamePhaseManager.Instance.Data.CartItemsData.Remove(item);
                 }
                 _currentShoppingPhase.KeepInInventory(item);
+                OnItemStoredInInventory?.Invoke(item);
                 SetStatusMessage("Stored item into Inventory.");
+            }
+            else if (sourceZone == ZoneType.Buy && targetZone == ZoneType.Inventory)
+            {
+                OnItemStoredInInventory?.Invoke(item);
             }
 
             // 4. Handle Moving from Inventory to Cart
@@ -547,9 +561,11 @@ namespace TrashCount.Gameplay.Phases.UI
                     if (GamePhaseManager.Instance.Data.Money < buyable.BuyPrice)
                     {
                         SetStatusMessage($"Not enough money! Need ${buyable.BuyPrice}.");
+                        OnTransactionFailed?.Invoke();
                         return false;
                     }
                     GamePhaseManager.Instance.Data.Money -= (uint)buyable.BuyPrice;
+                    OnItemPurchased?.Invoke(item);
                     SetStatusMessage($"Bought and used item for ${buyable.BuyPrice}!");
                 }
             }
@@ -557,6 +573,7 @@ namespace TrashCount.Gameplay.Phases.UI
             bool success = _currentShoppingPhase.UseOnPlayer(item);
             if (success)
             {
+                OnItemConsumed?.Invoke(item);
                 if (dragItem.CurrentZone == ZoneType.Buy)
                 {
                     PopulateBuyZone();
@@ -580,9 +597,11 @@ namespace TrashCount.Gameplay.Phases.UI
                     if (GamePhaseManager.Instance.Data.Money < buyable.BuyPrice)
                     {
                         SetStatusMessage($"Not enough money! Need ${buyable.BuyPrice}.");
+                        OnTransactionFailed?.Invoke();
                         return false;
                     }
                     GamePhaseManager.Instance.Data.Money -= (uint)buyable.BuyPrice;
+                    OnItemPurchased?.Invoke(item);
                     SetStatusMessage($"Bought and used item for ${buyable.BuyPrice}!");
                 }
             }
@@ -590,6 +609,7 @@ namespace TrashCount.Gameplay.Phases.UI
             bool success = _currentShoppingPhase.UseOnFather(item);
             if (success)
             {
+                OnItemConsumed?.Invoke(item);
                 if (dragItem.CurrentZone == ZoneType.Buy)
                 {
                     PopulateBuyZone();

@@ -12,23 +12,122 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac652675601280e408f6b9f3450d4172, type: 3}
   m_Name: MainGameData
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.GameData
-  Money: 4
+  Money: 93800
   MaxInventorySize: 10
   DateTime:
-    TotalSeconds: 68413.445
-    Day: 2
+    TotalSeconds: 33223.21
+    Day: 3
   PlayerData:
     Healthy: 100
-    Hunger: 89.30579
+    Hunger: 100
     IsSick: 0
   FatherData:
     Healthy: 100
-    Hunger: 80
+    Hunger: 60
     IsSick: 0
   InventoryData:
-    _data: []
+    _data:
+    - ItemName: Red-Pill
+      SellPrice: 50
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138435
+      - rid: 7378900090327138436
+      - rid: 7378900090327138437
+      - rid: 7378900090327138438
+    - ItemName: Red-Pill
+      SellPrice: 50
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138435
+      - rid: 7378900090327138436
+      - rid: 7378900090327138437
+      - rid: 7378900090327138438
+    - ItemName: SodaCan
+      SellPrice: 10
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138439
+      - rid: 7378900090327138440
+      - rid: 7378900090327138441
+      - rid: 7378900090327138442
+    - ItemName: Small Can
+      SellPrice: 30
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138443
+      - rid: 7378900090327138444
+      - rid: 7378900090327138445
+      - rid: 7378900090327138446
+    - ItemName: Small Can
+      SellPrice: 30
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138443
+      - rid: 7378900090327138444
+      - rid: 7378900090327138445
+      - rid: 7378900090327138446
+    - ItemName: Small Can
+      SellPrice: 30
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138443
+      - rid: 7378900090327138444
+      - rid: 7378900090327138445
+      - rid: 7378900090327138446
     MaxInventorySize: 10
   CartItemsData: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7378900090327138435
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 1
+    - rid: 7378900090327138436
+      type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        BuyPrice: 3000
+    - rid: 7378900090327138437
+      type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        RestoreAmount: -5
+        HealthAmount: 15
+    - rid: 7378900090327138438
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 3343229072912101299, guid: bf58252b67b807e4eb830e9401bb344d, type: 3}
+    - rid: 7378900090327138439
+      type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        RestoreAmount: 15
+        HealthAmount: -1
+    - rid: 7378900090327138440
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 20
+    - rid: 7378900090327138441
+      type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        BuyPrice: 50
+    - rid: 7378900090327138442
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1282870137230404, guid: 32613f8bb48411147a34f8c5823dbdc1, type: 3}
+    - rid: 7378900090327138443
+      type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        RestoreAmount: 15
+        HealthAmount: 0
+    - rid: 7378900090327138444
+      type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        BuyPrice: 50
+    - rid: 7378900090327138445
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 5
+    - rid: 7378900090327138446
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1188061737444922, guid: 565530ba333db6e45946a858afdc9468, type: 3}
