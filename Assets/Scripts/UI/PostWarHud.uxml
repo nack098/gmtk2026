@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:PostWarUI="PostWarUI">
+    <ui:Style src="PostWarHUD.uss" />
+
+    <ui:VisualElement name="hud-root">
+        <ui:VisualElement name="status-container">
+            
+            <ui:VisualElement class="gauge-wrapper">
+                <PostWarUI:CircularGauge name="health-gauge" line-thickness="5" class="gauge-widget" />
+                <ui:Label text="HP" class="gauge-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="gauge-wrapper">
+                <PostWarUI:CircularGauge name="hunger-gauge" line-thickness="5" class="gauge-widget" />
+                <ui:Label text="FOD" class="gauge-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="gauge-wrapper">
+                <PostWarUI:CircularGauge name="stamina-gauge" line-thickness="5" class="gauge-widget" />
+                <ui:Label text="STM" class="gauge-label" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
