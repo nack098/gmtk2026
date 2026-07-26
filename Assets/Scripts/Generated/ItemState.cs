@@ -10,7 +10,7 @@ namespace TrashCount.Data
         Banana,
         Bread,
         Wheel,
-        Car,
+        CarFrame,
         SodaCan,
         SmallCan,
         SpamCan,
@@ -19,6 +19,9 @@ namespace TrashCount.Data
         Rice,
         Red_Pill,
         Green_Pill,
+        SteeringWheel,
+        Muffler,
+        FuelTank,
     }
 
     public partial class ItemData
@@ -45,8 +48,8 @@ namespace TrashCount.Data
                     return data.Items.TryGetValue("Bread", out var v_Bread) ? v_Bread : default;
                 case ItemState.Wheel:
                     return data.Items.TryGetValue("Wheel", out var v_Wheel) ? v_Wheel : default;
-                case ItemState.Car:
-                    return data.Items.TryGetValue("Car", out var v_Car) ? v_Car : default;
+                case ItemState.CarFrame:
+                    return data.Items.TryGetValue("CarFrame", out var v_CarFrame) ? v_CarFrame : default;
                 case ItemState.SodaCan:
                     return data.Items.TryGetValue("SodaCan", out var v_SodaCan) ? v_SodaCan : default;
                 case ItemState.SmallCan:
@@ -63,6 +66,12 @@ namespace TrashCount.Data
                     return data.Items.TryGetValue("Red-Pill", out var v_Red_Pill) ? v_Red_Pill : default;
                 case ItemState.Green_Pill:
                     return data.Items.TryGetValue("Green-Pill", out var v_Green_Pill) ? v_Green_Pill : default;
+                case ItemState.SteeringWheel:
+                    return data.Items.TryGetValue("SteeringWheel", out var v_SteeringWheel) ? v_SteeringWheel : default;
+                case ItemState.Muffler:
+                    return data.Items.TryGetValue("Muffler", out var v_Muffler) ? v_Muffler : default;
+                case ItemState.FuelTank:
+                    return data.Items.TryGetValue("FuelTank", out var v_FuelTank) ? v_FuelTank : default;
                 default:
                     return default;
             }

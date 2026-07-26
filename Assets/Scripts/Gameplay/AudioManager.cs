@@ -171,6 +171,13 @@ public class AudioManager : MonoBehaviour
         PlaySfx(clips[Random.Range(0, clips.Length)], pos, volume, pitchVariance);
     }
 
+    /// <summary>หา random clip จาก array แล้วเล่นเป็น 2D</summary>
+    public void PlayRandomSfx2D(AudioClip[] clips, float volume = 1f)
+    {
+        if (clips == null || clips.Length == 0) return;
+        PlaySfx2D(clips[Random.Range(0, clips.Length)], volume);
+    }
+
     // ── Public API: Music ─────────────────────────────────────────────────
     public void PlayMusic(AudioClip clip, bool loop = true)
     {

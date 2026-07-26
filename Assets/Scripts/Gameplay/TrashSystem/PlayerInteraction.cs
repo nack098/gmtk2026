@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TrashCount.Gameplay.Abstracts;
@@ -6,6 +7,10 @@ namespace TrashCount.Gameplay.TrashSystem
 {
     public class PlayerInteraction : MonoBehaviour
     {
+        public event Action<WorldItem> OnItemPickedUp;
+        public event Action<WorldItem> OnItemDropped;
+        public event Action<WorldItem> OnItemConsumed;
+
         [Header("Interaction Settings")]
         [SerializeField] private Collider interactionTrigger;
         [SerializeField] private LayerMask interactableMask = ~0; // Default to all layers
@@ -212,6 +217,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 _playStat.IsCarryingItem = true;
             }
 
+            OnItemPickedUp?.Invoke(worldItem);
             Debug.Log($"[PlayerInteraction] Picked up {worldItem.State}");
         }
 
@@ -232,12 +238,15 @@ namespace TrashCount.Gameplay.TrashSystem
             {
                 _playStat.IsCarryingItem = false;
             }
+
+            OnItemDropped?.Invoke(itemToDrop);
         }
 
         public void ConsumeCarriedItem()
         {
             if (CarriedItem == null) return;
 
+            WorldItem consumedItem = CarriedItem;
             if (_playStat != null && CarriedItem.TryConsume(_playStat))
             {
                 CarriedItem = null;
@@ -245,6 +254,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 {
                     _playStat.IsCarryingItem = false;
                 }
+                OnItemConsumed?.Invoke(consumedItem);
             }
             else
             {

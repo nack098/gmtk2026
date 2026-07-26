@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5914692014831748614}
   - component: {fileID: 4716242142708606468}
+  - component: {fileID: 71248303647420583}
   m_Layer: 0
   m_Name: Audiomanager
   m_TagString: Untagged
@@ -51,6 +52,19 @@ MonoBehaviour:
   defaultMaster: 1
   defaultMusic: 1
   defaultSfx: 1
+--- !u!114 &71248303647420583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3752838712914819223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a7c8b7af75b92a4887b43dd1bc3cd95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.GameplayAudioBridge
+  sfxConfig: {fileID: 0}
 --- !u!1 &5591597747197081029
 GameObject:
   m_ObjectHideFlags: 0

@@ -44,15 +44,15 @@ MonoBehaviour:
   - key: Wheel
     value:
       ItemName: Wheel
-      SellPrice: 30
+      SellPrice: 15
       Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900088568152065
       - rid: 7378900088568152066
-  - key: Car
+  - key: CarFrame
     value:
       ItemName: Car
-      SellPrice: 60
+      SellPrice: 50
       Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900088568152067
@@ -90,7 +90,7 @@ MonoBehaviour:
   - key: Radiator
     value:
       ItemName: Radiator
-      SellPrice: 60
+      SellPrice: 20
       Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900088568152084
@@ -98,7 +98,7 @@ MonoBehaviour:
   - key: Notebook
     value:
       ItemName: Notebook
-      SellPrice: 100
+      SellPrice: 50
       Itemicon: {fileID: 0}
       capabilities:
       - rid: 7378900088568152086
@@ -131,18 +131,42 @@ MonoBehaviour:
       - rid: 7378900088568152430
       - rid: 7378900088568152431
       - rid: 7378900088568152433
+  - key: SteeringWheel
+    value:
+      ItemName: SteeringWheel
+      SellPrice: 45
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138397
+      - rid: 7378900090327138398
+  - key: Muffler
+    value:
+      ItemName: Muffler
+      SellPrice: 45
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138399
+      - rid: 7378900090327138400
+  - key: FuelTank
+    value:
+      ItemName: FuelTank
+      SellPrice: 10
+      Itemicon: {fileID: 0}
+      capabilities:
+      - rid: 7378900090327138409
+      - rid: 7378900090327138408
   references:
     version: 2
     RefIds:
     - rid: 7378900049062527049
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        RestoreAmount: 10
-        HealthAmount: 0
+        RestoreAmount: 5
+        HealthAmount: -2
     - rid: 7378900049062527050
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        DropChance: 100
+        DropChance: 75
     - rid: 7378900049062527051
       type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -164,11 +188,11 @@ MonoBehaviour:
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
         RestoreAmount: 5
-        HealthAmount: 0
+        HealthAmount: -2
     - rid: 7378900088317018113
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        DropChance: 100
+        DropChance: 75
     - rid: 7378900088317018114
       type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -180,7 +204,7 @@ MonoBehaviour:
     - rid: 7378900088568152065
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        DropChance: 30
+        DropChance: 50
     - rid: 7378900088568152066
       type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -204,7 +228,7 @@ MonoBehaviour:
     - rid: 7378900088568152071
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        RestoreAmount: 20
+        RestoreAmount: 15
         HealthAmount: -1
     - rid: 7378900088568152072
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
@@ -225,7 +249,7 @@ MonoBehaviour:
     - rid: 7378900088568152076
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        RestoreAmount: 20
+        RestoreAmount: 15
         HealthAmount: 0
     - rid: 7378900088568152077
       type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
@@ -235,7 +259,7 @@ MonoBehaviour:
       type: {class: EatableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
         RestoreAmount: 50
-        HealthAmount: 0
+        HealthAmount: -5
     - rid: 7378900088568152081
       type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -251,7 +275,7 @@ MonoBehaviour:
     - rid: 7378900088568152084
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        DropChance: 20
+        DropChance: 25
     - rid: 7378900088568152085
       type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -277,7 +301,7 @@ MonoBehaviour:
     - rid: 7378900088568152422
       type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        BuyPrice: 1000
+        BuyPrice: 3000
     - rid: 7378900088568152425
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -293,7 +317,7 @@ MonoBehaviour:
     - rid: 7378900088568152430
       type: {class: BuyableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
-        BuyPrice: 2000
+        BuyPrice: 5000
     - rid: 7378900088568152431
       type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
       data:
@@ -303,3 +327,27 @@ MonoBehaviour:
       data:
         RestoreAmount: 0
         HealthAmount: 30
+    - rid: 7378900090327138397
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 45
+    - rid: 7378900090327138398
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1856854601013476, guid: 8e885bf6d3dd0cb4e8c89899b98fa1ba, type: 3}
+    - rid: 7378900090327138399
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1011373775253534, guid: cac530be51fa614458a02884bfe6e5bf, type: 3}
+    - rid: 7378900090327138400
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 70
+    - rid: 7378900090327138408
+      type: {class: PickableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        WorldPrefab: {fileID: 1339757149798516, guid: f3de6c932859d8940b5ba1d50fb8035b, type: 3}
+    - rid: 7378900090327138409
+      type: {class: DropableCapability, ns: TrashCount.Data.Models, asm: Assembly-CSharp}
+      data:
+        DropChance: 70

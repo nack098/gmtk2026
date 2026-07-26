@@ -58,11 +58,18 @@ public class GpuPickableScrapScatter : MonoBehaviour
             foreach (var kvp in _itemData.Items)
             {
                 var model = kvp.Value;
-                if (model != null && model.TryGetCapability<TrashCount.Data.Models.PickableCapability>(out var pickable) && pickable.WorldPrefab != null)
+                if (model == null) continue;
+
+                // Must have BOTH PickableCapability (with 3D WorldPrefab) AND DropableCapability (with DropChance > 0)
+                if (model.TryGetCapability<TrashCount.Data.Models.PickableCapability>(out var pickable) && pickable.WorldPrefab != null)
                 {
-                    if (!prefabsFromData.Contains(pickable.WorldPrefab))
+                    if (model.TryGetCapability<TrashCount.Data.Models.DropableCapability>(out var dropable) && dropable.DropChance > 0)
                     {
-                        prefabsFromData.Add(pickable.WorldPrefab);
+                        int weight = (int)dropable.DropChance;
+                        for (int i = 0; i < weight; i++)
+                        {
+                            prefabsFromData.Add(pickable.WorldPrefab);
+                        }
                     }
                 }
             }

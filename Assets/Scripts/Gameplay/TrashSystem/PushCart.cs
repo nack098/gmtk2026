@@ -27,6 +27,7 @@ namespace TrashCount.Gameplay.TrashSystem
 
         public event Action<PushCart> OnPushStarted;
         public event Action<PushCart> OnPushStopped;
+        public event Action<WorldItem> OnItemAddedToCart;
 
         private Rigidbody _rigidbody;
         private Transform _originalParent;
@@ -267,6 +268,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 {
                     _itemsInCart.Add(worldItem);
                     worldItem.transform.SetParent(basketContainer);
+                    OnItemAddedToCart?.Invoke(worldItem);
                     Debug.Log($"[PushCart] Item added to cart: {worldItem.State}. Total items: {_itemsInCart.Count}");
                 }
             }

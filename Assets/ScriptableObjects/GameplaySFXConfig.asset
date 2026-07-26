@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0982920a1d003ff4b8f0944f32bbe8fc, type: 3}
+  m_Name: GameplaySFXConfig
+  m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.GameplaySFXConfig
+  itemPickUp: {fileID: 0}
+  itemDrop: {fileID: 0}
+  itemConsume: {fileID: 0}
+  cartGrab: {fileID: 0}
+  cartRelease: {fileID: 0}
+  itemAddedToCart: {fileID: 0}
+  trashRummage: {fileID: 0}
+  trashFoundItem: {fileID: 0}
+  trashEmpty: {fileID: 0}
+  shopBuy: {fileID: 0}
+  shopSell: {fileID: 0}
+  shopTransactionFailed: {fileID: 0}
+  stomachGrowl: {fileID: 0}
+  staminaExhausted: {fileID: 0}
+  dayEndBell: {fileID: 0}
+  gameOver: {fileID: 0}
+  uiClick: {fileID: 0}

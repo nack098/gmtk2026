@@ -28,7 +28,9 @@ namespace TrashCount.Gameplay.TrashSystem
 
         // Events for Future Expansion & UI
         public event Action<TrashContainer> OnMinigameRequested;
+        public event Action<TrashContainer> OnRummageStarted;
         public event Action<TrashContainer, ItemState, ItemModel> OnItemRummaged;
+        public event Action<TrashContainer> OnRummageEmpty;
         public event Action<TrashContainer> OnContainerEmptied;
 
         private bool _isCoolingDown = false;
@@ -91,6 +93,7 @@ namespace TrashCount.Gameplay.TrashSystem
             }
 
             RemainingSearches--;
+            OnRummageStarted?.Invoke(this);
 
             bool hasDrop = false;
             ItemState droppedState = ItemState.None;
@@ -109,6 +112,7 @@ namespace TrashCount.Gameplay.TrashSystem
             }
             else
             {
+                OnRummageEmpty?.Invoke(this);
                 Debug.Log($"[TrashContainer] Searched {gameObject.name} but found nothing.");
             }
 

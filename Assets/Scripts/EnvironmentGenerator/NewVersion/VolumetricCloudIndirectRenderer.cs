@@ -27,9 +27,36 @@ public class VolumetricCloudIndirectRenderer : MonoBehaviour
         ReleaseBuffers();
     }
 
+    private static Mesh _defaultCubeMesh;
+
+    private void EnsureResources()
+    {
+        if (_cubeMesh == null)
+        {
+            if (_defaultCubeMesh == null)
+            {
+                GameObject tempCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _defaultCubeMesh = tempCube.GetComponent<MeshFilter>().sharedMesh;
+                if (Application.isPlaying) Destroy(tempCube);
+                else DestroyImmediate(tempCube);
+            }
+            _cubeMesh = _defaultCubeMesh;
+        }
+
+        if (_cloudMaterial == null)
+        {
+            Shader shader = Shader.Find("Custom/URP_AdvancedVolumetricCloudsWebGPU");
+            if (shader != null)
+            {
+                _cloudMaterial = new Material(shader) { name = "VolumetricClouds_Material_Runtime" };
+            }
+        }
+    }
+
     private void InitializeBuffers()
     {
-        if (_cubeMesh == null) return;
+        EnsureResources();
+        if (_cubeMesh == null || _cloudMaterial == null) return;
 
         _argsBuffer?.Release();
         _argsBuffer = new GraphicsBuffer(
@@ -55,13 +82,21 @@ public class VolumetricCloudIndirectRenderer : MonoBehaviour
 
     private void Update()
     {
+        EnsureResources();
+        if (_cubeMesh == null || _cloudMaterial == null) return;
+
         if (_targetCamera == null)
         {
             if (Camera.main != null) _targetCamera = Camera.main.transform;
             else return;
         }
 
-        if (_argsBuffer == null || !_argsBuffer.IsValid()) InitializeBuffers();
+        if (_argsBuffer == null || !_argsBuffer.IsValid() || _objectToWorldBuffer == null || _worldToObjectBuffer == null)
+        {
+            InitializeBuffers();
+        }
+
+        if (_argsBuffer == null || !_argsBuffer.IsValid() || _objectToWorldBuffer == null || _worldToObjectBuffer == null) return;
 
         Vector3 targetPos = transform.position;
         if (_lockToCameraXZ)
