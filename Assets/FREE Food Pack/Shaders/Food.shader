@@ -13,6 +13,10 @@ Shader "FREE Food Pack/Food" {
             "RenderType"="Opaque"
             "Queue"="Geometry"
         }
+
+        // =================================================================
+        // PASS 1: FORWARD LIT
+        // =================================================================
         Pass {
             Name "ForwardLit"
             Tags {
@@ -80,18 +84,21 @@ Shader "FREE Food Pack/Food" {
             ENDHLSL
         }
 
+        // =================================================================
+        // PASS 2: DEPTH ONLY
+        // =================================================================
         Pass {
-            Name "ShadowCaster"
-            Tags {
-                "LightMode"="ShadowCaster"
-            }
+            Name "DepthOnly"
+            Tags { "LightMode"="DepthOnly" }
+
+            ZWrite On
+            ColorMask R
 
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShadowUtils.hlsl" // FIX: Required for ApplyShadowBias
 
             struct Attributes {
                 float4 positionOS : POSITION;
@@ -111,8 +118,58 @@ Shader "FREE Food Pack/Food" {
                 float _Speed;
             CBUFFER_END
 
-            // Uniform provided by URP for light direction during shadow pass
-            float3 _LightDirection;
+            Varyings vert(Attributes input) {
+                Varyings output;
+                float sinTime = sin(_Time.y * _Speed) * 0.5 + 0.5;
+                float3 pushedPosOS = input.positionOS.xyz + (input.normalOS * (_push * sinTime));
+
+                output.positionCS = TransformObjectToHClip(pushedPosOS);
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_Target {
+                return input.positionCS.z;
+            }
+            ENDHLSL
+        }
+
+        // =================================================================
+        // PASS 3: SHADOW CASTER
+        // =================================================================
+        Pass {
+            Name "ShadowCaster"
+            Tags {
+                "LightMode"="ShadowCaster"
+            }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            struct Attributes {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+            };
+
+            struct Varyings {
+                float4 positionCS : SV_POSITION;
+            };
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float4 _FresnelColor;
+                float _FresnelSize;
+                float _FresnelIntensity;
+                float _push;
+                float _Speed;
+            CBUFFER_END
 
             Varyings vert(Attributes input) {
                 Varyings output;
@@ -122,8 +179,17 @@ Shader "FREE Food Pack/Food" {
                 float3 positionWS = TransformObjectToWorld(pushedPosOS);
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
 
-                // FIX: Pass actual light direction vector instead of hardcoded float3(0,1,0)
-                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+                // Fixed cross-version URP shadow calculation
+                Light mainLight = GetMainLight();
+                float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, mainLight.direction));
+
+                #if UNITY_REVERSED_Z
+                    positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #else
+                    positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #endif
+
+                output.positionCS = positionCS;
                 return output;
             }
 

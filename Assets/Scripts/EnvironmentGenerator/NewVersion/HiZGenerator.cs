@@ -10,26 +10,32 @@ public class HiZGenerator : MonoBehaviour
     private RenderTexture hiZTexture;
     private int kernelMip0 = -1;
     private int kernelMips = -1;
+    private Camera attachedCamera;
 
     public RenderTexture HiZTexture => hiZTexture;
 
     private static readonly int InputSourceID = Shader.PropertyToID("_InputSource");
-    private static readonly int InputMipID = Shader.PropertyToID("_InputMip");      // <-- ADDED THIS!
+    private static readonly int InputMipID = Shader.PropertyToID("_InputMip");
     private static readonly int OutputMipID = Shader.PropertyToID("_OutputMip");
     private static readonly int OutputSizeID = Shader.PropertyToID("_OutputSize");
 
     private void OnEnable()
     {
-        RenderPipelineManager.beginCameraRendering += OnBeginCamera;
-        if (TryGetComponent<Camera>(out var cam))
+        attachedCamera = GetComponent<Camera>();
+        if (attachedCamera != null)
         {
-            cam.depthTextureMode |= DepthTextureMode.Depth; // Force Unity to render depth
+            // Force Unity / URP to generate depth texture pass
+            attachedCamera.depthTextureMode |= DepthTextureMode.Depth;
         }
+
+        // FIX: Switched from beginCameraRendering to endCameraRendering!
+        // Depth texture is only populated AFTER opaque geometry/depth prepass executes!
+        RenderPipelineManager.endCameraRendering += OnEndCamera;
     }
 
     private void OnDisable()
     {
-        RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+        RenderPipelineManager.endCameraRendering -= OnEndCamera;
         ReleaseTexture();
     }
 
@@ -45,12 +51,12 @@ public class HiZGenerator : MonoBehaviour
         kernelMips = hiZCullingShader.FindKernel("K_DownsampleMips");
     }
 
-    private void OnBeginCamera(ScriptableRenderContext context, Camera cam)
+    private void OnEndCamera(ScriptableRenderContext context, Camera cam)
     {
-        if (cam != GetComponent<Camera>()) return;
+        if (attachedCamera != null && cam != attachedCamera) return;
         if (hiZCullingShader == null) return;
 
-        // Grab the actual rendered depth texture from URP / Built-in
+        // Grab real Camera Depth Texture from Unity rendering pipeline
         Texture depthTex = Shader.GetGlobalTexture("_CameraDepthTexture");
         if (depthTex == null) depthTex = Texture2D.blackTexture;
 
@@ -65,9 +71,9 @@ public class HiZGenerator : MonoBehaviour
 
         EnsureTexture(ref hiZTexture, width, height);
 
-        if (sourceDepth == null) sourceDepth = Texture2D.whiteTexture;
+        if (sourceDepth == null) sourceDepth = Texture2D.blackTexture;
 
-        // 1. Mip 0 Generation (Reads _InputSource, Writes _OutputMip [Mip 0])
+        // 1. Mip 0 Generation
         int mipWidth = Mathf.Max(1, width / 2);
         int mipHeight = Mathf.Max(1, height / 2);
 
@@ -77,14 +83,13 @@ public class HiZGenerator : MonoBehaviour
 
         hiZCullingShader.Dispatch(kernelMip0, Mathf.CeilToInt(mipWidth / 8.0f), Mathf.CeilToInt(mipHeight / 8.0f), 1);
 
-        // 2. Sub-Mips Generation (Reads _InputMip [Mip i-1], Writes _OutputMip [Mip i])
+        // 2. Sub-Mips Generation
         int numMips = hiZTexture.mipmapCount;
         for (int i = 1; i < numMips; i++)
         {
             mipWidth = Mathf.Max(1, mipWidth / 2);
             mipHeight = Mathf.Max(1, mipHeight / 2);
 
-            // FIX IS HERE: Bind _InputMip for reading, and _OutputMip for writing!
             hiZCullingShader.SetTexture(kernelMips, InputMipID, hiZTexture, i - 1);
             hiZCullingShader.SetTexture(kernelMips, OutputMipID, hiZTexture, i);
             hiZCullingShader.SetInts(OutputSizeID, mipWidth, mipHeight);

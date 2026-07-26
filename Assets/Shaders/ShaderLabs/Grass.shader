@@ -4,6 +4,9 @@ Shader "Takayama/Grass"
     {
         _BaseColor ("Grass Root Color", Color) = (0.05, 0.25, 0.05, 1.0)
         _TipColor  ("Grass Tip Color", Color)  = (0.3, 0.8, 0.2, 1.0)
+        _IsPlaneMesh ("Is Plane Mesh", Float) = 0.0
+        _MeshHeight ("Mesh Height", Float) = 1.0
+        _NormalNormalBlend ("Normal Blend", Range(0.0, 1.0)) = 0.5
     }
     SubShader
     {
@@ -15,7 +18,7 @@ Shader "Takayama/Grass"
         }
 
         // ----------------------------------------------------
-        // PASS 1: FORWARD LIT PASS (Main rendering pass)
+        // PASS 1: FORWARD LIT PASS
         // ----------------------------------------------------
         Pass
         {
@@ -29,8 +32,7 @@ Shader "Takayama/Grass"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
-            
-            // URP LIGHTING & SHADOW MULTI-COMPILE KEYWORDS
+
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_CASCADE _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
@@ -43,7 +45,7 @@ Shader "Takayama/Grass"
         }
 
         // ----------------------------------------------------
-        // PASS 2: SHADOW CASTER PASS (Generates real-time shadows)
+        // PASS 2: SHADOW CASTER PASS
         // ----------------------------------------------------
         Pass
         {
@@ -56,7 +58,6 @@ Shader "Takayama/Grass"
 
             HLSLPROGRAM
             #pragma target 4.5
-            // FIX: Point to vertShadow in GrassShadows.hlsl, NOT vert!
             #pragma vertex vertShadow 
             #pragma fragment fragShadow
 
@@ -67,7 +68,7 @@ Shader "Takayama/Grass"
         }
 
         // ----------------------------------------------------
-        // PASS 3: DEPTH ONLY PASS (Required for Depth Prepass & Post-Processing)
+        // PASS 3: DEPTH ONLY PASS
         // ----------------------------------------------------
         Pass
         {

@@ -2,10 +2,18 @@
 #define GRASS_SHADOWS_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "GrassCommon.hlsl"
 
 StructuredBuffer<GrassData> _DataBuffer;
+
+CBUFFER_START(UnityPerMaterial)
+    float4 _BaseColor;
+    float4 _TipColor;
+    float _IsPlaneMesh;
+    float _MeshHeight;
+    float _NormalNormalBlend;
+CBUFFER_END
 
 struct Attributes
 {
@@ -50,29 +58,41 @@ Varyings vertShadow(Attributes input)
 
     GrassData instance = _DataBuffer[input.instanceID];
     
-    float3 scaledOS = input.positionOS.xyz * float3(instance.scale.x, instance.scale.y, instance.scale.x);
-    
+    // 1. Pivot Offset Handling (Plane Shift)
+    float3 posOS = input.positionOS.xyz;
+    if (_IsPlaneMesh > 0.5)
+    {
+        posOS.y += 0.5; 
+    }
+
+    // 2. Scale & Surface Alignment
+    float3 scaledOS = posOS * float3(instance.scale.x, instance.scale.y, instance.scale.x);
     float3x3 rotMat = GetInstanceTransformMatrixShadow(instance.normal, instance.rotation.y);
     float3 rotatedOS = mul(rotMat, scaledOS);
-    float3 positionWS = rotatedOS + instance.position;
+    float3 worldPos = rotatedOS + instance.position;
+
+    // 3. Identical Wind Calculation as Main Pass
+    float meshHeight = max(0.001, _MeshHeight);
+    float heightFactor = saturate(posOS.y / meshHeight);
     
+    float wave = sin(_Time.y * 0.5 + (worldPos.x + worldPos.z) * 0.3);
+    float3 windOffset = float3(wave * 0.05, 0.0, wave * 0.025) * heightFactor;
+    worldPos += windOffset;
+
+    // 4. Transform to Shadow Clip Space (Fixed cross-version URP Shadow Bias)
     float3 normalWS = normalize(mul(rotMat, input.normalOS));
     
-    float wave = sin(_Time.y * 1.5 + (positionWS.x + positionWS.z) * 0.3);
-    positionWS += float3(wave * 0.08, 0.0, wave * 0.04) * input.uv.y;
+    Light mainLight = GetMainLight();
+    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(worldPos, normalWS, mainLight.direction));
 
-    float3 lightDir = _MainLightPosition.xyz;
-    if (length(lightDir) < 0.001) lightDir = float3(0.0, 1.0, 0.0);
-    
-    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDir));
-    
     #if UNITY_REVERSED_Z
         positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
     #else
         positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
     #endif
-    
+
     output.positionCS = positionCS;
+
     return output;
 }
 
