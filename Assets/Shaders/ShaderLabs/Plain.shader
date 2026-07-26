@@ -38,6 +38,9 @@ Shader "Custom/TerrainTriplanar"
     {
         Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
 
+        // =================================================================
+        // PASS 1: FORWARD LIT (Color + Cel Shading)
+        // =================================================================
         Pass
         {
             Name "ForwardLit"
@@ -180,6 +183,124 @@ Shader "Custom/TerrainTriplanar"
             }
             ENDHLSL
         }
+
+        // =================================================================
+        // PASS 2: DEPTH ONLY (CRITICAL FOR Hi-Z CULLING PREPASS!)
+        // =================================================================
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            ZWrite On
+            ColorMask R
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv         : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+            };
+
+            TEXTURE2D(_HeightMap); SAMPLER(sampler_HeightMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float _HeightScale;
+            CBUFFER_END
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+
+                // Displace vertex in depth pass so _CameraDepthTexture matches full 3D terrain!
+                float height = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, input.uv, 0).r;
+                float3 displacedPosOS = input.positionOS.xyz;
+                displacedPosOS.y += height * _HeightScale;
+
+                output.positionCS = TransformObjectToHClip(displacedPosOS);
+                return output;
+            }
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                return input.positionCS.z;
+            }
+            ENDHLSL
+        }
+
+        // =================================================================
+        // PASS 3: SHADOW CASTER (Unity 6 URP Compatible)
+        // =================================================================
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+            };
+
+            TEXTURE2D(_HeightMap); SAMPLER(sampler_HeightMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float _HeightScale;
+            CBUFFER_END
+
+            float3 _LightDirection;
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+
+                // 1. Displace vertex height for shadow mapping
+                float height = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, input.uv, 0).r;
+                float3 displacedPosOS = input.positionOS.xyz;
+                displacedPosOS.y += height * _HeightScale;
+
+                // 2. Transform position & normal to World Space
+                float3 positionWS = TransformObjectToWorld(displacedPosOS);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+
+                // 3. Apply URP shadow bias and project to Clip Space
+                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+                return output;
+            }
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                return 0;
+            }
+            ENDHLSL
+        }
     }
-    Fallback "Diffuse"
+    Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }

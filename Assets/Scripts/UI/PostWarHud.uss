@@ -1,0 +1,48 @@
+#hud-root {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 2%;
+}
+
+#status-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    min-width: 200px;
+    
+    /* REMOVED: Background panel color, borders, and heavy padding */
+    background-color: rgba(0, 0, 0, 0); 
+    border-width: 0px;
+    padding: 4px;
+}
+
+.gauge-wrapper {
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+.gauge-widget {
+    width: 48px;
+    height: 48px;
+    align-self: center;
+}
+
+.gauge-label {
+    color: #E2E8E0; /* Brightened text slightly for contrast */
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    padding: 0px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    
+    /* Drop shadow for text: offset-x | offset-y | blur-radius | color */
+    text-shadow: 1px 2px 2px rgba(0, 0, 0, 0.9);
+}
