@@ -34,6 +34,8 @@ int _MaxInstancesPerType;
 int _ScrapTypeCount;
 float _ScreenWidth;  
 float _ScreenHeight; 
+int _MaxMipLevel;
+int _HiZEnabled;
 
 Texture2D<float> _HiZBuffer;
 SamplerState sampler_PointClamp;
@@ -46,10 +48,10 @@ void K_DownsampleMip0(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)_OutputSize.x || id.y >= (uint)_OutputSize.y) return;
 
     int2 baseCoords = id.xy * 2;
-    float d0 = _InputSource[baseCoords + int2(0, 0)];
-    float d1 = _InputSource[baseCoords + int2(1, 0)];
-    float d2 = _InputSource[baseCoords + int2(0, 1)];
-    float d3 = _InputSource[baseCoords + int2(1, 1)];
+    float d0 = _InputSource.Load(int3(baseCoords + int2(0, 0), 0));
+    float d1 = _InputSource.Load(int3(baseCoords + int2(1, 0), 0));
+    float d2 = _InputSource.Load(int3(baseCoords + int2(0, 1), 0));
+    float d3 = _InputSource.Load(int3(baseCoords + int2(1, 1), 0));
 
     // Conservative Reversed-Z: MIN depth guarantees no premature false-culling!
     float conservativeDepth = min(min(d0, d1), min(d2, d3));
@@ -62,10 +64,10 @@ void K_DownsampleMips(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)_OutputSize.x || id.y >= (uint)_OutputSize.y) return;
 
     int2 baseCoords = id.xy * 2;
-    float d0 = _InputMip[baseCoords + int2(0, 0)];
-    float d1 = _InputMip[baseCoords + int2(1, 0)];
-    float d2 = _InputMip[baseCoords + int2(0, 1)];
-    float d3 = _InputMip[baseCoords + int2(1, 1)];
+    float d0 = _InputMip.Load(int3(baseCoords + int2(0, 0), 0));
+    float d1 = _InputMip.Load(int3(baseCoords + int2(1, 0), 0));
+    float d2 = _InputMip.Load(int3(baseCoords + int2(0, 1), 0));
+    float d3 = _InputMip.Load(int3(baseCoords + int2(1, 1), 0));
 
     // Conservative Reversed-Z: MIN depth across mips!
     float conservativeDepth = min(min(d0, d1), min(d2, d3));
@@ -106,44 +108,73 @@ void CullingBatch(uint3 id : SV_DispatchThreadID)
     }
 
     // 3. Conservative Hi-Z Occlusion Culling
-    float4 clipPos = mul(_VPMatrix, float4(pos, 1.0));
-    
-    if (clipPos.w > 0.0)
+    if (_HiZEnabled != 0)
     {
-        // Compute Clip-Space Extents
-        float4 clipMin = mul(_VPMatrix, float4(pos - float3(maxRadius, maxRadius, maxRadius), 1.0));
-        float4 clipMax = mul(_VPMatrix, float4(pos + float3(maxRadius, maxRadius, maxRadius), 1.0));
+        float3 boxMin = pos - float3(maxRadius, maxRadius, maxRadius);
+        float3 boxMax = pos + float3(maxRadius, maxRadius, maxRadius);
 
-        float3 ndcMin = clipMin.xyz / max(clipMin.w, 0.0001);
-        float3 ndcMax = clipMax.xyz / max(clipMax.w, 0.0001);
+        float3 corners[8];
+        corners[0] = float3(boxMin.x, boxMin.y, boxMin.z);
+        corners[1] = float3(boxMax.x, boxMin.y, boxMin.z);
+        corners[2] = float3(boxMin.x, boxMax.y, boxMin.z);
+        corners[3] = float3(boxMax.x, boxMax.y, boxMin.z);
+        corners[4] = float3(boxMin.x, boxMin.y, boxMax.z);
+        corners[5] = float3(boxMax.x, boxMin.y, boxMax.z);
+        corners[6] = float3(boxMin.x, boxMax.y, boxMax.z);
+        corners[7] = float3(boxMax.x, boxMax.y, boxMax.z);
 
-        float2 uvMin = clamp(min(ndcMin.xy, ndcMax.xy) * 0.5 + 0.5, 0.0, 1.0);
-        float2 uvMax = clamp(max(ndcMin.xy, ndcMax.xy) * 0.5 + 0.5, 0.0, 1.0);
+        float2 uvMin = float2(1.0, 1.0);
+        float2 uvMax = float2(0.0, 0.0);
+        float instanceNearestDepth = 0.0;
+        bool isNearCulledOrInvalid = false;
 
-        // In Reversed-Z, MIN depth is furthest away from camera
-        float instanceFurthestDepth = min(ndcMin.z, ndcMax.z);
-
-        // Screen footprint size in pixels
-        float2 pixelSize = (uvMax - uvMin) * float2(_ScreenWidth, _ScreenHeight);
-        float maxPixelSize = max(pixelSize.x, pixelSize.y);
-
-        // Mip level calculation with safety clamp against negative/NaN
-        float mipLevel = clamp(floor(log2(max(maxPixelSize, 1.0))), 0.0, 7.0);
-
-        // Sample 4 corners of bounding box
-        float4 samples;
-        samples.x = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMin, mipLevel);
-        samples.y = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMax.x, uvMin.y), mipLevel);
-        samples.z = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMin.x, uvMax.y), mipLevel);
-        samples.w = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMax, mipLevel);
-
-        // Maximum sampled Hi-Z depth represents the nearest surface in Reversed-Z
-        float nearestHiZDepth = max(max(samples.x, samples.y), max(samples.z, samples.w));
-
-        // Occlusion Test (Reversed-Z: If instance depth is lower than closest occluder depth, it is occluded!)
-        if (instanceFurthestDepth < nearestHiZDepth)
+        [unroll]
+        for (int c = 0; c < 8; c++)
         {
-            return; // Occluded!
+            float4 clipPos = mul(_VPMatrix, float4(corners[c], 1.0));
+
+            if (clipPos.w <= 0.001)
+            {
+                isNearCulledOrInvalid = true;
+                break;
+            }
+
+            float3 ndc = clipPos.xyz / clipPos.w;
+            float2 uv = ndc.xy * 0.5 + 0.5;
+
+            #if UNITY_UV_STARTS_AT_TOP
+            uv.y = 1.0 - uv.y;
+            #endif
+
+            uvMin = min(uvMin, uv);
+            uvMax = max(uvMax, uv);
+
+            // Reversed-Z: largest NDC Z is closest to camera
+            instanceNearestDepth = max(instanceNearestDepth, ndc.z);
+        }
+
+        if (!isNearCulledOrInvalid)
+        {
+            uvMin = clamp(uvMin, 0.0, 1.0);
+            uvMax = clamp(uvMax, 0.0, 1.0);
+
+            float2 pixelSize = (uvMax - uvMin) * float2(_ScreenWidth, _ScreenHeight);
+            float maxPixelSize = max(pixelSize.x, pixelSize.y);
+
+            float mipLevel = clamp(ceil(log2(max(maxPixelSize, 1.0))), 0.0, (float)_MaxMipLevel);
+
+            float d00 = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMin, mipLevel);
+            float d10 = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMax.x, uvMin.y), mipLevel);
+            float d01 = _HiZBuffer.SampleLevel(sampler_PointClamp, float2(uvMin.x, uvMax.y), mipLevel);
+            float d11 = _HiZBuffer.SampleLevel(sampler_PointClamp, uvMax, mipLevel);
+
+            float furthestHiZDepth = min(min(d00, d10), min(d01, d11));
+
+            // Occlusion Test (Reversed-Z: If instance nearest depth < furthest scene depth - bias, it is occluded behind all geometry)
+            if (instanceNearestDepth < furthestHiZDepth - 0.0005f)
+            {
+                return; // Occluded!
+            }
         }
     }
 

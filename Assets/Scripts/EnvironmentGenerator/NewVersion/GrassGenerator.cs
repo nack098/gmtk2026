@@ -209,7 +209,16 @@ public class GrassGeneratorBatched : MonoBehaviour
 
     private void Update()
     {
-        if (!isInitialized || targetCamera == null) return;
+        if (!isInitialized) return;
+        if (targetCamera == null) targetCamera = Camera.main;
+        if (targetCamera == null) return;
+
+        if (hiZGenerator == null && targetCamera != null)
+        {
+            hiZGenerator = targetCamera.GetComponent<HiZGenerator>();
+            if (hiZGenerator == null) hiZGenerator = FindAnyObjectByType<HiZGenerator>();
+            if (hiZGenerator == null) hiZGenerator = targetCamera.gameObject.AddComponent<HiZGenerator>();
+        }
 
         // 1. Calculate Frustum Planes
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(targetCamera);
@@ -239,9 +248,13 @@ public class GrassGeneratorBatched : MonoBehaviour
         cullingShader.SetFloat(ScreenWidthID, (float)targetCamera.pixelWidth);
         cullingShader.SetFloat(ScreenHeightID, (float)targetCamera.pixelHeight);
 
-        // FIX: Fall back to BLACK texture (0.0 depth = No Occlusion in Reversed-Z)
-        Texture activeHiZ = (hiZGenerator != null && hiZGenerator.HiZTexture != null) ? (Texture)hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        bool hasHiZ = hiZGenerator != null && hiZGenerator.HiZTexture != null && hiZGenerator.HiZTexture.IsCreated();
+        Texture activeHiZ = hasHiZ ? (Texture)hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        int maxMipLevel = hasHiZ ? Mathf.Max(0, hiZGenerator.HiZTexture.mipmapCount - 1) : 0;
+
         cullingShader.SetTexture(cullingKernel, HiZBufferID, activeHiZ);
+        cullingShader.SetInt("_MaxMipLevel", maxMipLevel);
+        cullingShader.SetInt("_HiZEnabled", hasHiZ ? 1 : 0);
 
         cullingShader.SetBuffer(cullingKernel, "_GlobalArgsBuffer", argumentsBuffer);
         cullingShader.SetBuffer(cullingKernel, "_AllInstancesBuffer", allInstancesBuffer);

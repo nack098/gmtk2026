@@ -112,7 +112,7 @@ GameObject:
   - component: {fileID: 3478275613585687396}
   m_Layer: 0
   m_Name: Hair
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -297,7 +297,7 @@ GameObject:
   - component: {fileID: 8969437485433046810}
   m_Layer: 0
   m_Name: Face
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -515,7 +515,7 @@ GameObject:
   - component: {fileID: 2097093370206403668}
   m_Layer: 0
   m_Name: EyeLight
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1173,7 +1173,7 @@ GameObject:
   - component: {fileID: 3858174814666179449}
   m_Layer: 0
   m_Name: Body
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1503,7 +1503,7 @@ CharacterController:
   serializedVersion: 3
   m_Height: 1.32
   m_Radius: 0.29
-  m_SlopeLimit: 45
+  m_SlopeLimit: 0
   m_StepOffset: 0.3
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
@@ -1649,6 +1649,8 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
+  interact: 0
+  consume: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
@@ -1683,6 +1685,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
   - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
   FootstepAudioVolume: 0.3
+  JumpAudioClips:
+  - {fileID: 8300000, guid: b13fd8dee3cf44c40859bf6c987bf68c, type: 3}
+  - {fileID: 8300000, guid: c37138872f61b4418be9e8c1084790ac, type: 3}
+  - {fileID: 8300000, guid: a3da1afec2ee3465db49602a61ef0ec7, type: 3}
+  JumpAudioVolume: 0.5
   JumpHeight: 1.2
   Gravity: -10
   JumpTimeout: 0.3
@@ -1693,7 +1700,7 @@ MonoBehaviour:
   GroundLayers:
     serializedVersion: 2
     m_Bits: 64
-  CinemachineCameraTarget: {fileID: 8338988566280778634, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+  CinemachineCameraTarget: {fileID: 0}
   TopClamp: 70
   BottomClamp: -30
   CameraAngleOverride: 0
@@ -1749,8 +1756,6 @@ MonoBehaviour:
   interactableMask:
     serializedVersion: 2
     m_Bits: 128
-  interactKey: 101
-  consumeKey: 102
   holdSocket: {fileID: 885900011552610042}
   CartSocket: {fileID: 2181673826830681180}
 --- !u!114 &7481969881411911895
@@ -1876,7 +1881,7 @@ GameObject:
   - component: {fileID: 1211425551428825437}
   m_Layer: 0
   m_Name: Coat
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3206,7 +3211,7 @@ GameObject:
   - component: {fileID: 7752817937640567726}
   m_Layer: 0
   m_Name: Eye
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3393,7 +3398,7 @@ GameObject:
   - component: {fileID: 498539186883537873}
   m_Layer: 0
   m_Name: EyeLash
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

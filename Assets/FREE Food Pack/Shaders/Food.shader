@@ -91,7 +91,7 @@ Shader "FREE Food Pack/Food" {
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShadowUtils.hlsl" // FIX: Required for ApplyShadowBias
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             struct Attributes {
                 float4 positionOS : POSITION;
@@ -111,9 +111,6 @@ Shader "FREE Food Pack/Food" {
                 float _Speed;
             CBUFFER_END
 
-            // Uniform provided by URP for light direction during shadow pass
-            float3 _LightDirection;
-
             Varyings vert(Attributes input) {
                 Varyings output;
                 float sinTime = sin(_Time.y * _Speed) * 0.5 + 0.5;
@@ -121,9 +118,10 @@ Shader "FREE Food Pack/Food" {
 
                 float3 positionWS = TransformObjectToWorld(pushedPosOS);
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 lightDir = _MainLightPosition.xyz;
+                if (length(lightDir) < 0.001) lightDir = float3(0.0, 1.0, 0.0);
 
-                // FIX: Pass actual light direction vector instead of hardcoded float3(0,1,0)
-                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDir));
                 return output;
             }
 

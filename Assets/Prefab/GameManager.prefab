@@ -418,7 +418,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Gameplay.Phases.GamePhaseManager
   gameData: {fileID: 11400000, guid: 2e4aab17a23654b4eae023fc4c29b534, type: 2}
   uiActionsAsset: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  gameplayDurationMinutes: 10
+  gameplayDurationMinutes: 2
   resetDataOnStart: 1
 --- !u!1 &7972446606406247861
 GameObject:

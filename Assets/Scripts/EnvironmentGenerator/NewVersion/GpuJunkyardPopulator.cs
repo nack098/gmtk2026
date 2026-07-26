@@ -186,7 +186,16 @@ public class GpuJunkyardPopulator : MonoBehaviour
 
     private void Update()
     {
-        if (!_isInitialized || _cullingComputeShader == null || _targetCamera == null) return;
+        if (!_isInitialized || _cullingComputeShader == null) return;
+        if (_targetCamera == null) _targetCamera = Camera.main;
+        if (_targetCamera == null) return;
+
+        if (_hiZGenerator == null && _targetCamera != null)
+        {
+            _hiZGenerator = _targetCamera.GetComponent<HiZGenerator>();
+            if (_hiZGenerator == null) _hiZGenerator = FindAnyObjectByType<HiZGenerator>();
+            if (_hiZGenerator == null) _hiZGenerator = _targetCamera.gameObject.AddComponent<HiZGenerator>();
+        }
 
         // 1. Calculate Frustum Planes
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_targetCamera);
@@ -223,9 +232,13 @@ public class GpuJunkyardPopulator : MonoBehaviour
         _cullingComputeShader.SetBuffer(_cullKernel, "_GlobalArgsBuffer", _globalArgsBuffer);
         _cullingComputeShader.SetBuffer(_cullKernel, "_CounterBuffer", _counterBuffer);
 
-        // FIX: Safe fallback is BLACK texture (0.0 depth = No Occlusion in Reversed-Z)
-        Texture activeHiZ = (_hiZGenerator != null && _hiZGenerator.HiZTexture != null) ? (Texture)_hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        bool hasHiZ = _hiZGenerator != null && _hiZGenerator.HiZTexture != null && _hiZGenerator.HiZTexture.IsCreated();
+        Texture activeHiZ = hasHiZ ? (Texture)_hiZGenerator.HiZTexture : Texture2D.blackTexture;
+        int maxMipLevel = hasHiZ ? Mathf.Max(0, _hiZGenerator.HiZTexture.mipmapCount - 1) : 0;
+
         _cullingComputeShader.SetTexture(_cullKernel, HiZBufferID, activeHiZ);
+        _cullingComputeShader.SetInt("_MaxMipLevel", maxMipLevel);
+        _cullingComputeShader.SetInt("_HiZEnabled", hasHiZ ? 1 : 0);
 
         int cullThreadGroups = Mathf.Max(1, Mathf.CeilToInt(_maxInstanceCapacity / 64.0f));
         _cullingComputeShader.Dispatch(_cullKernel, cullThreadGroups, 1, 1);
