@@ -104,7 +104,11 @@ namespace TrashCount.Gameplay.Phases
 
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.PlayerData != null)
             {
-                _manager.Data.PlayerData.Hunger = Mathf.Min(100f, _manager.Data.PlayerData.Hunger + eatable.RestoreAmount);
+                _manager.Data.PlayerData.Hunger = Mathf.Clamp(_manager.Data.PlayerData.Hunger + eatable.RestoreAmount, 0f, 100f);
+                if (eatable.HealthAmount != 0)
+                {
+                    _manager.Data.PlayerData.Healthy = Mathf.Clamp(_manager.Data.PlayerData.Healthy + eatable.HealthAmount, 0f, 100f);
+                }
 
                 // Sync modified GameData stats into Playstat runtime instance
                 var playstat = Object.FindAnyObjectByType<Playstat>();
@@ -113,7 +117,7 @@ namespace TrashCount.Gameplay.Phases
                     playstat.SyncFromGameData();
                 }
 
-                Debug.Log($"[ShoppingPhase] Used item on Player. Restored {eatable.RestoreAmount} hunger. Current Player Hunger: {_manager.Data.PlayerData.Hunger}");
+                Debug.Log($"[ShoppingPhase] Used item on Player. Hunger change: {eatable.RestoreAmount}, Health change: {eatable.HealthAmount}. Current Player Healthy: {_manager.Data.PlayerData.Healthy}");
                 return true;
             }
             return false;
@@ -125,8 +129,12 @@ namespace TrashCount.Gameplay.Phases
 
             if (item.TryGetCapability<EatableCapability>(out var eatable) && _manager.Data.FatherData != null)
             {
-                _manager.Data.FatherData.Hunger = Mathf.Min(100f, _manager.Data.FatherData.Hunger + eatable.RestoreAmount);
-                Debug.Log($"[ShoppingPhase] Used item on Father. Restored {eatable.RestoreAmount} hunger. Current Father Hunger: {_manager.Data.FatherData.Hunger}");
+                _manager.Data.FatherData.Hunger = Mathf.Clamp(_manager.Data.FatherData.Hunger + eatable.RestoreAmount, 0f, 100f);
+                if (eatable.HealthAmount != 0)
+                {
+                    _manager.Data.FatherData.Healthy = Mathf.Clamp(_manager.Data.FatherData.Healthy + eatable.HealthAmount, 0f, 100f);
+                }
+                Debug.Log($"[ShoppingPhase] Used item on Father. Hunger change: {eatable.RestoreAmount}, Health change: {eatable.HealthAmount}. Current Father Healthy: {_manager.Data.FatherData.Healthy}");
                 return true;
             }
             return false;

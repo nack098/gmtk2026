@@ -1140,6 +1140,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
   - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
   FootstepAudioVolume: 0.3
+  JumpAudioClips: []
+  JumpAudioVolume: 0.5
   JumpHeight: 1.2
   Gravity: -15
   JumpTimeout: 0.3
@@ -1188,6 +1190,8 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
+  interact: 0
+  consume: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
@@ -2403,7 +2407,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8338988566280778634}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.064218394, y: 0.64811516, z: -0.054993413, w: 0.7568345}
+  m_LocalRotation: {x: -0, y: 0.65044415, z: -0, w: 0.7595541}
   m_LocalPosition: {x: 0, y: 1.375, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

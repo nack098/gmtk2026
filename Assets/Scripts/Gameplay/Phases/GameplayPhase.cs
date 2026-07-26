@@ -62,8 +62,16 @@ namespace TrashCount.Gameplay.Phases
             if (RemainingTime <= 0f)
             {
                 RemainingTime = 0f;
-                Debug.Log("[GameplayPhase] Gameplay phase completed! Transitioning to Shopping Phase.");
-                _manager.ChangePhase(new ShoppingPhase(_manager));
+                if (_manager != null && _manager.CheckGameOverCondition())
+                {
+                    Debug.LogWarning("[GameplayPhase] Timer completed, but Game Over condition met! Transitioning to GameOverPhase.");
+                    _manager.ChangePhase(new GameOverPhase(_manager));
+                }
+                else
+                {
+                    Debug.Log("[GameplayPhase] Gameplay phase completed! Transitioning to Shopping Phase.");
+                    _manager.ChangePhase(new ShoppingPhase(_manager));
+                }
             }
         }
 
@@ -96,10 +104,17 @@ namespace TrashCount.Gameplay.Phases
                 Debug.Log($"[GameplayPhase] Saved {_manager.Data.CartItemsData.Count} items from PushCart into GameData.CartItemsData!");
             }
     
-            // Transition to ZenShopScene if currently in ZenGameScene
-            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "ZenShopScene")
+            // Transition to ZenShopScene if not Game Over and currently in another scene
+            if (_manager != null && !_manager.CheckGameOverCondition() && !(_manager.CurrentPhase is GameOverPhase))
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene("ZenShopScene");
+                if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "ZenShopScene")
+                {
+                    UnityEngine.SceneManagement.SceneManager.LoadScene("ZenShopScene");
+                }
+            }
+            else
+            {
+                Debug.Log("[GameplayPhase] Game Over condition active - Skipping transition to ZenShopScene.");
             }
         }
     }

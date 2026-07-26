@@ -27,8 +27,35 @@ public class IndirectVolumetricFogManager : MonoBehaviour
         ReleaseBuffers();
     }
 
+    private static Mesh defaultCubeMesh;
+
+    void EnsureResources()
+    {
+        if (volumeProxyMesh == null)
+        {
+            if (defaultCubeMesh == null)
+            {
+                GameObject tempCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                defaultCubeMesh = tempCube.GetComponent<MeshFilter>().sharedMesh;
+                if (Application.isPlaying) Destroy(tempCube);
+                else DestroyImmediate(tempCube);
+            }
+            volumeProxyMesh = defaultCubeMesh;
+        }
+
+        if (fogMaterial == null)
+        {
+            Shader shader = Shader.Find("Custom/URP_IndirectVolumetricFog_Smooth");
+            if (shader != null)
+            {
+                fogMaterial = new Material(shader) { name = "IndirectVolumetricFog_Material_Runtime" };
+            }
+        }
+    }
+
     void InitializeBuffers()
     {
+        EnsureResources();
         if (volumeProxyMesh == null || fogMaterial == null) return;
 
         ReleaseBuffers();
@@ -65,11 +92,15 @@ public class IndirectVolumetricFogManager : MonoBehaviour
 
     void Update()
     {
-        if (argsBuffer == null || fogMaterial == null || volumeProxyMesh == null)
+        EnsureResources();
+        if (volumeProxyMesh == null || fogMaterial == null) return;
+
+        if (argsBuffer == null || transformBuffer == null || invTransformBuffer == null)
         {
             InitializeBuffers();
-            return;
         }
+
+        if (argsBuffer == null || fogMaterial == null || volumeProxyMesh == null) return;
 
         // Draw via indirect instancing
         Graphics.DrawMeshInstancedIndirect(

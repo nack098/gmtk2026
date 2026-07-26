@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using TrashCount.Data;
 using TrashCount.Data.Models;
 using TrashCount.Gameplay.TrashSystem;
 
@@ -11,8 +12,17 @@ namespace TrashCount.Gameplay.Phases.UI
     {
         public static ShoppingPhaseUI Instance { get; private set; }
 
+        public event System.Action<ItemModel> OnItemPurchased;
+        public event System.Action<ItemModel> OnItemSold;
+        public event System.Action<ItemModel> OnItemConsumed;
+        public event System.Action<ItemModel> OnItemStoredInInventory;
+        public event System.Action OnTransactionFailed;
+
         [Header("Shopping Panel Reference")]
         [SerializeField] private GameObject shoppingPanel;
+
+        [Header("Data References")]
+        [SerializeField] private ItemData itemData;
 
         [Header("Zone Containers")]
         [SerializeField] private Transform cartZoneContainer;
@@ -40,6 +50,10 @@ namespace TrashCount.Gameplay.Phases.UI
         [SerializeField] private TextMeshProUGUI fatherHungerText;
         [SerializeField] private TextMeshProUGUI statusMessageText;
         
+        [Header("Shop Randomization Settings")]
+        [SerializeField] private int minShopItems = 3;
+        [SerializeField] private int maxShopItems = 5;
+
         private Playstat _playStat;
         
 
@@ -95,7 +109,7 @@ namespace TrashCount.Gameplay.Phases.UI
 
         private void EnsureDropZonesHaveRaycastTargets()
         {
-            var dropZones = Object.FindObjectsByType<UIItemDropZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var dropZones = Object.FindObjectsByType<UIItemDropZone>(FindObjectsInactive.Include);
             foreach (var zone in dropZones)
             {
                 if (zone != null)
@@ -181,24 +195,6 @@ namespace TrashCount.Gameplay.Phases.UI
                     shoppingPanel.SetActive(true);
                     shoppingPanel.transform.SetAsLastSibling(); // Bring Shopping Panel to front of Canvas hierarchy
 
-                    // Disable Raycast Target on Shopping Panel's background Image so buttons & drag items get clicks
-                    var bgImage = shoppingPanel.GetComponent<Image>();
-                    if (bgImage != null)
-                    {
-                        bgImage.raycastTarget = false;
-                    }
-
-                    // Disable Raycast Target on GamePhasePanel background if it exists
-                    var gamePhasePanel = GameObject.Find("GamePhasePanel");
-                    if (gamePhasePanel != null)
-                    {
-                        var panelImg = gamePhasePanel.GetComponent<Image>();
-                        if (panelImg != null) panelImg.raycastTarget = false;
-
-                        var cg = gamePhasePanel.GetComponent<CanvasGroup>();
-                        if (cg != null) cg.blocksRaycasts = false;
-                    }
-
                     Debug.Log("[ShoppingPhaseUI] Shopping Panel activated successfully!");
                     PopulateAllZones();
                     OpenBuyPanel(); // Open Shop (Buy Zone) tab by default
@@ -219,6 +215,9 @@ namespace TrashCount.Gameplay.Phases.UI
         {
             if (buyZonePanel != null) buyZonePanel.SetActive(true);
             if (CartInventoryZonePanel != null) CartInventoryZonePanel.SetActive(false);
+
+            // Reset and refresh BuyZonePanel items every time
+            PopulateBuyZone();
 
             // Fallback: If containers' parent GameObjects are used directly
             if (buyZonePanel == null && buyZoneContainer != null)
@@ -251,13 +250,16 @@ namespace TrashCount.Gameplay.Phases.UI
                 var parentObj = buyZoneContainer.parent != null ? buyZoneContainer.parent.gameObject : buyZoneContainer.gameObject;
                 parentObj.SetActive(false);
             }
-
             SetStatusMessage("Switched to CartInventory.");
-        }
+            }
+
+        private List<ShopItemEntry> _currentDailyShopItems = new();
+        private bool _isShopRandomizedForCurrentPhase = false;
 
         public void PopulateAllZones()
         {
             EnsureDropZonesHaveRaycastTargets();
+            _isShopRandomizedForCurrentPhase = false; // Force fresh random selection for new Shopping Phase!
             PopulateCartZone();
             PopulateInventoryZone();
             PopulateBuyZone();
@@ -274,24 +276,25 @@ namespace TrashCount.Gameplay.Phases.UI
                 foreach (var itemModel in GamePhaseManager.Instance.Data.CartItemsData)
                 {
                     if (itemModel == null) continue;
-                    string itemName = !string.IsNullOrEmpty(itemModel.ItemName) ? itemModel.ItemName : "Cart Item";
+
+                    string itemName = itemModel.ItemName;
                     UIDragItem itemUI = Instantiate(dragItemPrefab, cartZoneContainer);
                     itemUI.Setup(itemModel, ZoneType.Cart, itemName);
                 }
             }
-            // Fallback source: PushCart.Instance.ItemsInCart (single-scene mode)
+            // Secondary Fallback: Live 3D PushCart Instance in Scene
             else if (PushCart.Instance != null && PushCart.Instance.ItemsInCart != null)
             {
                 foreach (var worldItem in PushCart.Instance.ItemsInCart)
                 {
                     if (worldItem == null) continue;
 
-                    string itemName = worldItem.State.ToString();
-                    ItemModel model = worldItem.Model ?? new ItemModel { ItemName = itemName, SellPrice = 25 };
-                    if (string.IsNullOrEmpty(model.ItemName) || model.ItemName == "Item") model.ItemName = itemName;
-
-                    UIDragItem itemUI = Instantiate(dragItemPrefab, cartZoneContainer);
-                    itemUI.Setup(model, ZoneType.Cart, itemName);
+                    ItemModel itemModel = worldItem.Model;
+                    if (itemModel != null)
+                    {
+                        UIDragItem itemUI = Instantiate(dragItemPrefab, cartZoneContainer);
+                        itemUI.Setup(itemModel, ZoneType.Cart, worldItem.State.ToString());
+                    }
                 }
             }
         }
@@ -301,15 +304,13 @@ namespace TrashCount.Gameplay.Phases.UI
             if (inventoryZoneContainer == null || dragItemPrefab == null) return;
             ClearContainer(inventoryZoneContainer);
 
-            if (GamePhaseManager.Instance != null && GamePhaseManager.Instance.Data != null && GamePhaseManager.Instance.Data.InventoryData != null)
+            if (GamePhaseManager.Instance != null && GamePhaseManager.Instance.Data != null && GamePhaseManager.Instance.Data.InventoryData != null && GamePhaseManager.Instance.Data.InventoryData.Items != null)
             {
-                var inventory = GamePhaseManager.Instance.Data.InventoryData;
-                if (inventory.Items != null)
+                foreach (var itemModel in GamePhaseManager.Instance.Data.InventoryData.Items)
                 {
-                    foreach (var itemModel in inventory.Items)
+                    if (itemModel != null)
                     {
-                        if (itemModel == null) continue;
-                        string itemName = !string.IsNullOrEmpty(itemModel.ItemName) ? itemModel.ItemName : "Stored Item";
+                        string itemName = itemModel.ItemName;
                         UIDragItem itemUI = Instantiate(dragItemPrefab, inventoryZoneContainer);
                         itemUI.Setup(itemModel, ZoneType.Inventory, itemName);
                     }
@@ -322,13 +323,73 @@ namespace TrashCount.Gameplay.Phases.UI
             if (buyZoneContainer == null || dragItemPrefab == null) return;
             ClearContainer(buyZoneContainer);
 
-            // Populate sample buyable items
-            ItemModel cannedFood = new ItemModel { ItemName = "Canned Food", SellPrice = 15 };
-            cannedFood.capabilities.Add(new BuyableCapability { BuyPrice = 30 });
-            cannedFood.capabilities.Add(new EatableCapability { RestoreAmount = 40 });
+            List<ShopItemEntry> availableBuyItems = new List<ShopItemEntry>();
 
-            UIDragItem itemUI = Instantiate(dragItemPrefab, buyZoneContainer);
-            itemUI.Setup(cannedFood, ZoneType.Buy, cannedFood.ItemName);
+            ShopSystem shop = FindAnyObjectByType<ShopSystem>();
+            if (shop != null && shop.BuyCatalog != null && shop.BuyCatalog.Count > 0)
+            {
+                availableBuyItems.AddRange(shop.BuyCatalog);
+            }
+            else if (itemData != null && itemData.Items != null)
+            {
+                foreach (var kvp in itemData.Items)
+                {
+                    if (kvp.Value != null && kvp.Value.TryGetCapability<BuyableCapability>(out var buyable))
+                    {
+                        string cleanKey = kvp.Key.Trim().Replace("-", "_").Replace(" ", "_");
+                        if (System.Enum.TryParse<ItemState>(cleanKey, true, out var state) && state != ItemState.None)
+                        {
+                            availableBuyItems.Add(new ShopItemEntry(state, kvp.Value, buyable.BuyPrice, true));
+                        }
+                    }
+                }
+            }
+
+            if (availableBuyItems.Count == 0)
+            {
+                ItemModel cannedFood = new ItemModel { ItemName = "Canned Food", SellPrice = 15 };
+                cannedFood.capabilities.Add(new BuyableCapability { BuyPrice = 30 });
+                cannedFood.capabilities.Add(new EatableCapability { RestoreAmount = 40 });
+
+                UIDragItem defaultUI = Instantiate(dragItemPrefab, buyZoneContainer);
+                defaultUI.Setup(cannedFood, ZoneType.Buy, cannedFood.ItemName);
+                return;
+            }
+
+            // Fresh Randomize when entering a new Shopping Phase!
+            if (!_isShopRandomizedForCurrentPhase || _currentDailyShopItems.Count == 0)
+            {
+                _currentDailyShopItems.Clear();
+                List<ShopItemEntry> shuffled = new List<ShopItemEntry>(availableBuyItems);
+
+                // Fisher-Yates Shuffle using UnityEngine.Random
+                for (int i = shuffled.Count - 1; i > 0; i--)
+                {
+                    int j = UnityEngine.Random.Range(0, i + 1);
+                    var temp = shuffled[i];
+                    shuffled[i] = shuffled[j];
+                    shuffled[j] = temp;
+                }
+
+                int minCount = Mathf.Clamp(minShopItems, 1, shuffled.Count);
+                int maxCount = Mathf.Clamp(maxShopItems, minCount, shuffled.Count);
+                int countToPick = UnityEngine.Random.Range(minCount, maxCount + 1);
+
+                for (int i = 0; i < countToPick; i++)
+                {
+                    _currentDailyShopItems.Add(shuffled[i]);
+                }
+                _isShopRandomizedForCurrentPhase = true;
+            }
+
+            // Display current phase's randomized shop items
+            foreach (var entry in _currentDailyShopItems)
+            {
+                UIDragItem itemUI = Instantiate(dragItemPrefab, buyZoneContainer);
+                itemUI.Setup(entry.Item, ZoneType.Buy, entry.State.ToString());
+            }
+
+            Debug.Log($"[ShoppingPhaseUI] Populated BuyZone with {_currentDailyShopItems.Count} freshly randomized shop items.");
         }
 
         private void ClearContainer(Transform container)
@@ -384,12 +445,14 @@ namespace TrashCount.Gameplay.Phases.UI
                 if (success)
                 {
                     SetStatusMessage("Item purchased successfully!");
+                    OnItemPurchased?.Invoke(item);
                     // Re-stock Buy Zone shelf
                     PopulateBuyZone();
                 }
                 else
                 {
                     SetStatusMessage("Cannot buy item! (Not enough money)");
+                    OnTransactionFailed?.Invoke();
                     return;
                 }
             }
@@ -407,6 +470,7 @@ namespace TrashCount.Gameplay.Phases.UI
                 }
 
                 _currentShoppingPhase.SellItem(item);
+                OnItemSold?.Invoke(item);
                 SetStatusMessage($"Sold item for ${item.SellPrice}!");
                 Destroy(dragItem.gameObject);
                 return;
@@ -420,7 +484,12 @@ namespace TrashCount.Gameplay.Phases.UI
                     GamePhaseManager.Instance.Data.CartItemsData.Remove(item);
                 }
                 _currentShoppingPhase.KeepInInventory(item);
+                OnItemStoredInInventory?.Invoke(item);
                 SetStatusMessage("Stored item into Inventory.");
+            }
+            else if (sourceZone == ZoneType.Buy && targetZone == ZoneType.Inventory)
+            {
+                OnItemStoredInInventory?.Invoke(item);
             }
 
             // 4. Handle Moving from Inventory to Cart
@@ -474,9 +543,11 @@ namespace TrashCount.Gameplay.Phases.UI
                     if (GamePhaseManager.Instance.Data.Money < buyable.BuyPrice)
                     {
                         SetStatusMessage($"Not enough money! Need ${buyable.BuyPrice}.");
+                        OnTransactionFailed?.Invoke();
                         return false;
                     }
                     GamePhaseManager.Instance.Data.Money -= (uint)buyable.BuyPrice;
+                    OnItemPurchased?.Invoke(item);
                     SetStatusMessage($"Bought and used item for ${buyable.BuyPrice}!");
                 }
             }
@@ -484,6 +555,7 @@ namespace TrashCount.Gameplay.Phases.UI
             bool success = _currentShoppingPhase.UseOnPlayer(item);
             if (success)
             {
+                OnItemConsumed?.Invoke(item);
                 if (dragItem.CurrentZone == ZoneType.Buy)
                 {
                     PopulateBuyZone();
@@ -507,9 +579,11 @@ namespace TrashCount.Gameplay.Phases.UI
                     if (GamePhaseManager.Instance.Data.Money < buyable.BuyPrice)
                     {
                         SetStatusMessage($"Not enough money! Need ${buyable.BuyPrice}.");
+                        OnTransactionFailed?.Invoke();
                         return false;
                     }
                     GamePhaseManager.Instance.Data.Money -= (uint)buyable.BuyPrice;
+                    OnItemPurchased?.Invoke(item);
                     SetStatusMessage($"Bought and used item for ${buyable.BuyPrice}!");
                 }
             }
@@ -517,6 +591,7 @@ namespace TrashCount.Gameplay.Phases.UI
             bool success = _currentShoppingPhase.UseOnFather(item);
             if (success)
             {
+                OnItemConsumed?.Invoke(item);
                 if (dragItem.CurrentZone == ZoneType.Buy)
                 {
                     PopulateBuyZone();

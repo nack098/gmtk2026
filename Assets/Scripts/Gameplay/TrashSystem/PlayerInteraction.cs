@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TrashCount.Gameplay.Abstracts;
@@ -6,11 +7,13 @@ namespace TrashCount.Gameplay.TrashSystem
 {
     public class PlayerInteraction : MonoBehaviour
     {
+        public event Action<WorldItem> OnItemPickedUp;
+        public event Action<WorldItem> OnItemDropped;
+        public event Action<WorldItem> OnItemConsumed;
+
         [Header("Interaction Settings")]
         [SerializeField] private Collider interactionTrigger;
         [SerializeField] private LayerMask interactableMask = ~0; // Default to all layers
-        [SerializeField] private KeyCode interactKey ;
-        [SerializeField] private KeyCode consumeKey ;
 
         [Header("Carrying Socket Settings")]
         [SerializeField] private Transform holdSocket;
@@ -212,6 +215,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 _playStat.IsCarryingItem = true;
             }
 
+            OnItemPickedUp?.Invoke(worldItem);
             Debug.Log($"[PlayerInteraction] Picked up {worldItem.State}");
         }
 
@@ -232,12 +236,15 @@ namespace TrashCount.Gameplay.TrashSystem
             {
                 _playStat.IsCarryingItem = false;
             }
+
+            OnItemDropped?.Invoke(itemToDrop);
         }
 
         public void ConsumeCarriedItem()
         {
             if (CarriedItem == null) return;
 
+            WorldItem consumedItem = CarriedItem;
             if (_playStat != null && CarriedItem.TryConsume(_playStat))
             {
                 CarriedItem = null;
@@ -245,6 +252,7 @@ namespace TrashCount.Gameplay.TrashSystem
                 {
                     _playStat.IsCarryingItem = false;
                 }
+                OnItemConsumed?.Invoke(consumedItem);
             }
             else
             {
@@ -259,12 +267,12 @@ namespace TrashCount.Gameplay.TrashSystem
                 _inputs.interact = false;
                 return true;
             }
-#if ENABLE_INPUT_SYSTEM
+
             if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
             {
                 return true;
             }
-#endif
+
             return false;
         }
 
@@ -275,17 +283,16 @@ namespace TrashCount.Gameplay.TrashSystem
                 _inputs.consume = false;
                 return true;
             }
-#if ENABLE_INPUT_SYSTEM
+
             if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame)
             {
                 return true;
             }
-#endif
+
             return false;
         }
 
         // New Input System Action Message Receivers
-#if ENABLE_INPUT_SYSTEM
         public void OnInteract(UnityEngine.InputSystem.InputValue value)
         {
             if (_inputs != null) _inputs.interact = value.isPressed;
@@ -295,16 +302,5 @@ namespace TrashCount.Gameplay.TrashSystem
         {
             if (_inputs != null) _inputs.consume = value.isPressed;
         }
-#else
-        public void OnInteract()
-        {
-            if (_inputs != null) _inputs.interact = true;
-        }
-
-        public void OnConsume()
-        {
-            if (_inputs != null) _inputs.consume = true;
-        }
-#endif
     }
 }

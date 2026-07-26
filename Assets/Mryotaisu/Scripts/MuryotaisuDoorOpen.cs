@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,7 +19,8 @@ namespace MuryotaisuDoor
         // Update is called once per frame
         void Update()
         {
-            if (Input.GetKey("z"))
+            bool isZPressed = UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.zKey.isPressed;
+            if (isZPressed)
             {
                 animator.SetBool("doorOpenFlag", true);
             } else {

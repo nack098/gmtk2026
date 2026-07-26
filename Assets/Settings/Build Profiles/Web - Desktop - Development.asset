@@ -156,6 +156,7 @@ BuildProfilePlayerSettings:
   bundleVersion: 0.1.0
   preloadedAssets:
   - {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  - {fileID: 11400000, guid: 9e7be553448fa2546aea5752021cbcf7, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   xboxOneDisableKinectGpuReservation: 1
@@ -437,64 +438,29 @@ BuildProfilePlayerSettings:
       m_Kind: 2
       m_SubKind: 
     - m_Textures: []
-      m_Width: 192
-      m_Height: 192
-      m_Kind: 1
+      m_Width: 640
+      m_Height: 360
+      m_Kind: 3
       m_SubKind: 
     - m_Textures: []
-      m_Width: 144
-      m_Height: 144
-      m_Kind: 1
+      m_Width: 480
+      m_Height: 270
+      m_Kind: 3
       m_SubKind: 
     - m_Textures: []
-      m_Width: 96
-      m_Height: 96
-      m_Kind: 1
+      m_Width: 320
+      m_Height: 180
+      m_Kind: 3
       m_SubKind: 
     - m_Textures: []
-      m_Width: 72
-      m_Height: 72
-      m_Kind: 1
+      m_Width: 240
+      m_Height: 135
+      m_Kind: 3
       m_SubKind: 
     - m_Textures: []
-      m_Width: 48
-      m_Height: 48
-      m_Kind: 1
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 36
-      m_Height: 36
-      m_Kind: 1
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 192
-      m_Height: 192
-      m_Kind: 0
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 144
-      m_Height: 144
-      m_Kind: 0
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 96
-      m_Height: 96
-      m_Kind: 0
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 72
-      m_Height: 72
-      m_Kind: 0
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 48
-      m_Height: 48
-      m_Kind: 0
-      m_SubKind: 
-    - m_Textures: []
-      m_Width: 36
-      m_Height: 36
-      m_Kind: 0
+      m_Width: 160
+      m_Height: 90
+      m_Kind: 3
       m_SubKind: 
   - m_BuildTarget: tvOS
     m_Icons:
@@ -532,6 +498,13 @@ BuildProfilePlayerSettings:
       m_Width: 1920
       m_Height: 720
       m_Kind: 1
+      m_SubKind: 
+  - m_BuildTarget: VisionOS
+    m_Icons:
+    - m_Textures: []
+      m_Width: 1024
+      m_Height: 1024
+      m_Kind: 0
       m_SubKind: 
   m_BuildTargetBatching: []
   m_BuildTargetShaderSettings: []
@@ -1017,6 +990,6 @@ MonoBehaviour:
           m_BuildProfileEngineDiagnosticsState: 2
         m_AdaptivePerformanceEnabled: 0
         m_CodeOptimization: 0
-        m_WebGLClientBrowserPath: 
-        m_WebGLClientBrowserType: 0
+        m_WebGLClientBrowserPath: C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+        m_WebGLClientBrowserType: 1
         m_WebGLTextureSubtarget: 1

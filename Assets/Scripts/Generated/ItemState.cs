@@ -6,9 +6,22 @@ namespace TrashCount.Data
     public enum ItemState
     {
         None = 0,
-        Apple,
-        Orange,
-        bread,
+        Tomato,
+        Banana,
+        Bread,
+        Wheel,
+        CarFrame,
+        SodaCan,
+        SmallCan,
+        SpamCan,
+        Radiator,
+        Notebook,
+        Rice,
+        Red_Pill,
+        Green_Pill,
+        SteeringWheel,
+        Muffler,
+        FuelTank,
     }
 
     public partial class ItemData
@@ -27,12 +40,38 @@ namespace TrashCount.Data
 
             switch (state)
             {
-                case ItemState.Apple:
-                    return data.Items.TryGetValue("Apple", out var v_Apple) ? v_Apple : default;
-                case ItemState.Orange:
-                    return data.Items.TryGetValue("Orange", out var v_Orange) ? v_Orange : default;
-                case ItemState.bread:
-                    return data.Items.TryGetValue(" bread", out var v_bread) ? v_bread : default;
+                case ItemState.Tomato:
+                    return data.Items.TryGetValue("Tomato", out var v_Tomato) ? v_Tomato : default;
+                case ItemState.Banana:
+                    return data.Items.TryGetValue("Banana", out var v_Banana) ? v_Banana : default;
+                case ItemState.Bread:
+                    return data.Items.TryGetValue("Bread", out var v_Bread) ? v_Bread : default;
+                case ItemState.Wheel:
+                    return data.Items.TryGetValue("Wheel", out var v_Wheel) ? v_Wheel : default;
+                case ItemState.CarFrame:
+                    return data.Items.TryGetValue("CarFrame", out var v_CarFrame) ? v_CarFrame : default;
+                case ItemState.SodaCan:
+                    return data.Items.TryGetValue("SodaCan", out var v_SodaCan) ? v_SodaCan : default;
+                case ItemState.SmallCan:
+                    return data.Items.TryGetValue("SmallCan", out var v_SmallCan) ? v_SmallCan : default;
+                case ItemState.SpamCan:
+                    return data.Items.TryGetValue("SpamCan", out var v_SpamCan) ? v_SpamCan : default;
+                case ItemState.Radiator:
+                    return data.Items.TryGetValue("Radiator", out var v_Radiator) ? v_Radiator : default;
+                case ItemState.Notebook:
+                    return data.Items.TryGetValue("Notebook", out var v_Notebook) ? v_Notebook : default;
+                case ItemState.Rice:
+                    return data.Items.TryGetValue("Rice", out var v_Rice) ? v_Rice : default;
+                case ItemState.Red_Pill:
+                    return data.Items.TryGetValue("Red-Pill", out var v_Red_Pill) ? v_Red_Pill : default;
+                case ItemState.Green_Pill:
+                    return data.Items.TryGetValue("Green-Pill", out var v_Green_Pill) ? v_Green_Pill : default;
+                case ItemState.SteeringWheel:
+                    return data.Items.TryGetValue("SteeringWheel", out var v_SteeringWheel) ? v_SteeringWheel : default;
+                case ItemState.Muffler:
+                    return data.Items.TryGetValue("Muffler", out var v_Muffler) ? v_Muffler : default;
+                case ItemState.FuelTank:
+                    return data.Items.TryGetValue("FuelTank", out var v_FuelTank) ? v_FuelTank : default;
                 default:
                     return default;
             }
