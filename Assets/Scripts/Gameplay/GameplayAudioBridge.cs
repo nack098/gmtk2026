@@ -120,7 +120,7 @@ namespace TrashCount.Gameplay
             }
 
             // 7. Trash Containers in scene
-            var trashContainers = FindObjectsByType<TrashContainer>(FindObjectsSortMode.None);
+            var trashContainers = FindObjectsByType<TrashContainer>();
             foreach (var container in trashContainers)
             {
                 if (container == null) continue;
@@ -175,7 +175,7 @@ namespace TrashCount.Gameplay
                 _playstat.OnStaminaExhausted -= HandleStaminaExhausted;
             }
 
-            var trashContainers = FindObjectsByType<TrashContainer>(FindObjectsSortMode.None);
+            var trashContainers = FindObjectsByType<TrashContainer>();
             foreach (var container in trashContainers)
             {
                 if (container == null) continue;
@@ -189,7 +189,7 @@ namespace TrashCount.Gameplay
 
         private void HookAllButtonsInScene()
         {
-            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include);
             foreach (var btn in buttons)
             {
                 if (btn == null) continue;
@@ -200,7 +200,7 @@ namespace TrashCount.Gameplay
 
         private void UnhookAllButtonsInScene()
         {
-            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var buttons = FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include);
             foreach (var btn in buttons)
             {
                 if (btn == null) continue;

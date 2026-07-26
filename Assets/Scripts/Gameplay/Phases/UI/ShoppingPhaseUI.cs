@@ -109,7 +109,7 @@ namespace TrashCount.Gameplay.Phases.UI
 
         private void EnsureDropZonesHaveRaycastTargets()
         {
-            var dropZones = Object.FindObjectsByType<UIItemDropZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var dropZones = Object.FindObjectsByType<UIItemDropZone>(FindObjectsInactive.Include);
             foreach (var zone in dropZones)
             {
                 if (zone != null)
@@ -194,24 +194,6 @@ namespace TrashCount.Gameplay.Phases.UI
                 {
                     shoppingPanel.SetActive(true);
                     shoppingPanel.transform.SetAsLastSibling(); // Bring Shopping Panel to front of Canvas hierarchy
-
-                    // Disable Raycast Target on Shopping Panel's background Image so buttons & drag items get clicks
-                    var bgImage = shoppingPanel.GetComponent<Image>();
-                    if (bgImage != null)
-                    {
-                        bgImage.raycastTarget = false;
-                    }
-
-                    // Disable Raycast Target on GamePhasePanel background if it exists
-                    var gamePhasePanel = GameObject.Find("GamePhasePanel");
-                    if (gamePhasePanel != null)
-                    {
-                        var panelImg = gamePhasePanel.GetComponent<Image>();
-                        if (panelImg != null) panelImg.raycastTarget = false;
-
-                        var cg = gamePhasePanel.GetComponent<CanvasGroup>();
-                        if (cg != null) cg.blocksRaycasts = false;
-                    }
 
                     Debug.Log("[ShoppingPhaseUI] Shopping Panel activated successfully!");
                     PopulateAllZones();

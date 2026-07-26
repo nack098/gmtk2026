@@ -333,12 +333,6 @@ namespace StarterAssets
 
                 // Jump
                 bool isJumpPressed = _input.jump;
-#if ENABLE_INPUT_SYSTEM
-                if (!isJumpPressed && UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
-                {
-                    isJumpPressed = true;
-                }
-#endif
 
                 if (isJumpPressed && _jumpTimeoutDelta <= 0.0f)
                 {

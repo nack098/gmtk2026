@@ -636,7 +636,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.2
-  far clip plane: 500
+  far clip plane: 256
   field of view: 60.000004
   orthographic: 0
   orthographic size: 10
@@ -935,6 +935,7 @@ MonoBehaviour:
   dayText: {fileID: 0}
   gameOverPanel: {fileID: 0}
   daysSurvivedText: {fileID: 1377912191}
+  mainMenuButton: {fileID: 0}
 --- !u!114 &516618332
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1719,6 +1720,7 @@ MonoBehaviour:
   dayText: {fileID: 1516845938}
   gameOverPanel: {fileID: 516618329}
   daysSurvivedText: {fileID: 1377912191}
+  mainMenuButton: {fileID: 0}
 --- !u!114 &922660633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2476,7 +2478,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 10
     NearClipPlane: 0.2
-    FarClipPlane: 500
+    FarClipPlane: 256
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:

@@ -57,9 +57,21 @@ namespace TrashCount.Gameplay.Phases
             {
                 var esGO = new GameObject("EventSystem");
                 eventSystem = esGO.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                Debug.Log("[GamePhaseManager] Auto-created missing EventSystem in scene.");
+            }
 
-#if ENABLE_INPUT_SYSTEM
-                var inputModule = esGO.AddComponent<InputSystemUIInputModule>();
+            // Ensure EventSystem has InputSystemUIInputModule instead of legacy StandaloneInputModule
+            var legacyModule = eventSystem.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            if (legacyModule != null)
+            {
+                UnityEngine.Object.Destroy(legacyModule);
+                Debug.Log("[GamePhaseManager] Upgraded legacy StandaloneInputModule to InputSystemUIInputModule.");
+            }
+
+            var inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+            if (inputModule == null)
+            {
+                inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
                 if (uiActionsAsset != null)
                 {
                     inputModule.actionsAsset = uiActionsAsset;
@@ -68,18 +80,28 @@ namespace TrashCount.Gameplay.Phases
                 {
                     inputModule.AssignDefaultActions();
                 }
-#else
-                esGO.AddComponent<StandaloneInputModule>();
-#endif
-                Debug.Log("[GamePhaseManager] Auto-created missing EventSystem in scene.");
             }
         }
 
         private static bool _isNewGameSession = true;
 
+        public static void ResetSession()
+        {
+            _isNewGameSession = true;
+        }
+
         private void Start()
         {
             string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            Debug.Log($"[SceneTransition] GamePhaseManager initialized in Active Scene: '{activeScene}'");
+
+            // 1. Check Game Over condition FIRST before starting any normal phase
+            if (CheckGameOverCondition())
+            {
+                Debug.LogWarning("[GamePhaseManager] Start detected Game Over condition! Directing to GameOverPhase immediately.");
+                ChangePhase(new GameOverPhase(this));
+                return;
+            }
 
             if (activeScene == "ZenShopScene" || activeScene == "ShopScene")
             {
@@ -161,6 +183,7 @@ namespace TrashCount.Gameplay.Phases
             {
                 if (!(CurrentPhase is GameOverPhase))
                 {
+                    Debug.LogWarning("[GamePhaseManager] Game Over condition met! Transitioning to GameOverPhase...");
                     ChangePhase(new GameOverPhase(this));
                 }
             }
@@ -170,12 +193,20 @@ namespace TrashCount.Gameplay.Phases
 
         public void ChangePhase(IGamePhaseState newPhase)
         {
+            // Strictly block any phase change if the game is already in GameOverPhase
+            if (CurrentPhase is GameOverPhase && !(newPhase is GameOverPhase))
+            {
+                Debug.LogWarning($"[GamePhaseManager] Blocked phase change to '{newPhase?.PhaseName}' because game is locked in GameOverPhase.");
+                return;
+            }
+
+            string oldPhaseName = CurrentPhase != null ? CurrentPhase.PhaseName : "None";
             CurrentPhase?.Exit();
             CurrentPhase = newPhase;
             CurrentPhase?.Enter();
 
             OnPhaseChanged?.Invoke(CurrentPhase);
-            Debug.Log($"[GamePhaseManager] Entered phase: {CurrentPhase?.PhaseName}");
+            Debug.Log($"[GamePhaseManager] Phase Changed: [{oldPhaseName}] ==> [{CurrentPhase?.PhaseName}]");
         }
 
         public bool CheckGameOverCondition()
@@ -184,6 +215,11 @@ namespace TrashCount.Gameplay.Phases
 
             bool playerDead = gameData.PlayerData != null && gameData.PlayerData.Healthy <= 0f;
             bool fatherDead = gameData.FatherData != null && gameData.FatherData.Healthy <= 0f;
+
+            if (playerDead || fatherDead)
+            {
+                Debug.LogWarning($"[GamePhaseManager] Health check: Player Healthy = {gameData.PlayerData?.Healthy:F1}, Father Healthy = {gameData.FatherData?.Healthy:F1}");
+            }
 
             return playerDead || fatherDead;
         }
