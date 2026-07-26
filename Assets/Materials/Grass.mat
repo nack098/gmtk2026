@@ -24,7 +24,10 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _IsPlaneMesh: 0
+    - _MeshHeight: 1
+    - _NormalNormalBlend: 0.5
     m_Colors:
     - _BaseColor: {r: 0.3207547, g: 0.3207547, b: 0.3207547, a: 1}
     - _TipColor: {r: 0.37437698, g: 0.4433962, b: 0.43712175, a: 1}
