@@ -47,6 +47,7 @@ namespace TrashCount.Data.Models
     public class EatableCapability : IItemCapability
     {
         public int RestoreAmount;
+        public int HealthAmount;
     }
     
     [Serializable]

@@ -49,11 +49,11 @@ namespace TrashCount.Gameplay
             _dropCatalog = _items.Items
                 .Where(kvp => kvp.Value != null 
                            && kvp.Value.HasCapability<DropableCapability>()
-                           && Enum.TryParse<ItemState>(kvp.Key, true, out var state)
+                           && Enum.TryParse<ItemState>(kvp.Key.Trim().Replace("-", "_").Replace(" ", "_"), true, out var state)
                            && state != ItemState.None)
                 .Select(kvp =>
                 {
-                    Enum.TryParse<ItemState>(kvp.Key, true, out var state);
+                    Enum.TryParse<ItemState>(kvp.Key.Trim().Replace("-", "_").Replace(" ", "_"), true, out var state);
                     kvp.Value.TryGetCapability<DropableCapability>(out var dropable);
                     return new DropItemEntry(state, kvp.Value, dropable.DropChance);
                 })

@@ -33,6 +33,8 @@ namespace StarterAssets
         public AudioClip LandingAudioClip;
         public AudioClip[] FootstepAudioClips;
         [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
+        public AudioClip[] JumpAudioClips;
+        [Range(0, 1)] public float JumpAudioVolume = 0.5f;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -331,17 +333,16 @@ namespace StarterAssets
 
                 // Jump
                 bool isJumpPressed = _input.jump;
-#if ENABLE_INPUT_SYSTEM
-                if (!isJumpPressed && UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
-                {
-                    isJumpPressed = true;
-                }
-#endif
 
                 if (isJumpPressed && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+
+                    if (JumpAudioClips != null && JumpAudioClips.Length > 0)
+                    {
+                        AudioManager.Instance.PlayRandomSfx(JumpAudioClips, transform.position, JumpAudioVolume);
+                    }
 
                     // update animator if using character
                     if (_hasAnimator)
@@ -411,9 +412,18 @@ namespace StarterAssets
         {
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
-
-                if (AudioFootsteps != null)
+                if (FootstepAudioClips != null && FootstepAudioClips.Length > 0)
+                {
+                    AudioManager.Instance.PlayRandomSfx(FootstepAudioClips, transform.position, FootstepAudioVolume);
+                }
+                else if (AudioFootsteps != null && AudioFootsteps.clip != null)
+                {
+                    AudioManager.Instance.PlaySfx(AudioFootsteps.clip, transform.position, FootstepAudioVolume);
+                }
+                else if (AudioFootsteps != null)
+                {
                     AudioFootsteps.Play();
+                }
             }
         }
 
@@ -421,9 +431,18 @@ namespace StarterAssets
         {
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
-                if (LandingAudio != null)
+                if (LandingAudioClip != null)
+                {
+                    AudioManager.Instance.PlaySfx(LandingAudioClip, transform.position);
+                }
+                else if (LandingAudio != null && LandingAudio.clip != null)
+                {
+                    AudioManager.Instance.PlaySfx(LandingAudio.clip, transform.position);
+                }
+                else if (LandingAudio != null)
+                {
                     LandingAudio.Play();
-
+                }
             }
         }
     }

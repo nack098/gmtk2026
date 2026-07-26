@@ -85,8 +85,8 @@ namespace TrashCount.Gameplay.TrashSystem
                 ItemModel model = itemData[itemState];
                 if (model != null && model.TryGetCapability<EatableCapability>(out var eatable))
                 {
-                    player.EatFood(eatable.RestoreAmount);
-                    Debug.Log($"[WorldItem] Player ate {itemState} and restored {eatable.RestoreAmount} hunger.");
+                    player.EatFood(eatable.RestoreAmount, eatable.HealthAmount);
+                    Debug.Log($"[WorldItem] Player ate {itemState} (Restored Hunger: {eatable.RestoreAmount}, Health: {eatable.HealthAmount}).");
                     Destroy(gameObject);
                     return true;
                 }

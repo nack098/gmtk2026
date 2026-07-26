@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using StarterAssets;
 using TrashCount.Data;
@@ -5,6 +6,7 @@ using TrashCount.Gameplay;
 
 public class Playstat : MonoBehaviour
 {
+    public event Action OnStaminaExhausted;
     [Header("Data Source")]
     [SerializeField] private PlayerData playerData;
 
@@ -38,6 +40,7 @@ public class Playstat : MonoBehaviour
 
     private float _baseMoveSpeed = 2.0f;
     private float _baseSprintSpeed = 5.335f;
+    private bool _wasStaminaExhausted;
 
     [Header("GameData Integration")]
     [SerializeField] private GameData gameData;
@@ -121,6 +124,19 @@ public class Playstat : MonoBehaviour
         else if (isSprinting && currentStamina <= 0f)
         {
             if (inputs != null) inputs.sprint = false; // Block sprinting when out of stamina
+        }
+
+        if (currentStamina <= 0f)
+        {
+            if (!_wasStaminaExhausted)
+            {
+                _wasStaminaExhausted = true;
+                OnStaminaExhausted?.Invoke();
+            }
+        }
+        else if (currentStamina > 10f)
+        {
+            _wasStaminaExhausted = false;
         }
 
         // 4. Handle Stamina Regeneration when not sprinting, NOT carrying item, and NOT pushing cart
@@ -229,9 +245,9 @@ public class Playstat : MonoBehaviour
         controller.SprintSpeed = _baseSprintSpeed * stateSpeedMultiplier;
     }
 
-    public void EatFood(float amount)
+    public void EatFood(float hungerAmount, float healthAmount = 0f)
     {
-        currentHungry += amount;
+        currentHungry += hungerAmount;
 
         if (currentHungry > MaxHungry)
         {
@@ -239,16 +255,21 @@ public class Playstat : MonoBehaviour
             currentHungry = MaxHungry;
 
             // Convert excess Hungry to Stamina based on StaminaToHungryRatio
-            float hungryRatio =playerData.StaminaToHungryRatio;
+            float hungryRatio = playerData.StaminaToHungryRatio;
             float staminaGain = overflowHungry * hungryRatio;
 
             currentStamina = Mathf.Min(MaxStamina, currentStamina + staminaGain);
+        }
+
+        if (healthAmount != 0f)
+        {
+            Heal(healthAmount);
         }
     }
 
     public void Heal(float amount)
     {
-        currentHealthy = Mathf.Min(MaxHealthy, currentHealthy + amount);
+        currentHealthy = Mathf.Clamp(currentHealthy + amount, 0f, MaxHealthy);
     }
 
     public bool ConsumeStamina(float amount)

@@ -77,7 +77,8 @@ namespace TrashCount.Gameplay
             foreach (var kvp in _items.Items)
             {
                 if (kvp.Value == null) continue;
-                if (!Enum.TryParse<ItemState>(kvp.Key, true, out var state) || state == ItemState.None) continue;
+                string cleanKey = kvp.Key.Trim().Replace("-", "_").Replace(" ", "_");
+                if (!Enum.TryParse<ItemState>(cleanKey, true, out var state) || state == ItemState.None) continue;
 
                 ItemModel item = kvp.Value;
                 bool isBuyable = item.TryGetCapability<BuyableCapability>(out var buyable);

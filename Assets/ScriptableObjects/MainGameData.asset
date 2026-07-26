@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac652675601280e408f6b9f3450d4172, type: 3}
   m_Name: MainGameData
   m_EditorClassIdentifier: Assembly-CSharp::TrashCount.Data.GameData
-  Money: 4
+  Money: 0
   MaxInventorySize: 10
   DateTime:
-    TotalSeconds: 68413.445
-    Day: 2
+    TotalSeconds: 39496.32
+    Day: 1
   PlayerData:
     Healthy: 100
-    Hunger: 89.30579
+    Hunger: 100
     IsSick: 0
   FatherData:
     Healthy: 100
-    Hunger: 80
+    Hunger: 100
     IsSick: 0
   InventoryData:
     _data: []
